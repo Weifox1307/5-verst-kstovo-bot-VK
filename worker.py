@@ -1,77 +1,62 @@
-import os, requests, pandas as pd, datetime
+import os, requests, datetime
 from datetime import timedelta
 
-# Настройки из GitHub Secrets
+# Данные из Secrets
 NRMS_USER = os.getenv("NRMS_USERNAME")
 NRMS_PASS = os.getenv("NRMS_PASSWORD")
-EVENT_ID = 10079
 SHEET_URL = os.getenv("SHEET_CSV_URL")
+EVENT_ID = 10079 # ТВОЙ ID КСТОВО
 
-def get_next_saturday():
-    """Находит дату ближайшей субботы в формате ДД.ММ.ГГГГ"""
+def get_target_date():
     now = datetime.datetime.now()
-    # 5 — это суббота (Monday=0, Saturday=5)
+    # Если сегодня суббота и время > 11 утра, пишем на следующую неделю
     days_ahead = 5 - now.weekday()
-    if days_ahead < 0: # Если уже воскресенье
+    if days_ahead < 0 or (days_ahead == 0 and now.hour >= 11):
         days_ahead += 7
-    next_sat = now + timedelta(days=days_ahead)
-    return next_sat.strftime("%d.%m.%Y")
+    return (now + timedelta(days=days_ahead)).strftime("%d.%m.%Y")
 
-def get_nrms_token():
+def get_token():
     r = requests.post("https://nrms.5verst.ru/api/v1/auth/login", 
                       json={"username": NRMS_USER, "password": NRMS_PASS})
     return r.json()['result']['token']
 
-def sync():
-    # 1. Загружаем заявки из таблицы
-    try:
-        df = pd.read_csv(SHEET_URL)
-        # Очищаем пустые строки и берем только статус 'new'
-        new_volunteers = df[df['status'] == 'new'].dropna(subset=['verst_id'])
-    except Exception as e:
-        return print(f"Ошибка чтения таблицы: {e}")
-
-    if new_volunteers.empty:
-        return print("Новых заявок нет")
-
-    token = get_nrms_token()
+def run_sync():
+    target_date = get_target_date()
+    token = get_token()
     headers = {"Authorization": f"Bearer {token}"}
-    current_date = get_next_saturday()
-    print(f"Работаем с датой: {current_date}")
+    
+    # 1. Читаем таблицу
+    import pandas as pd
+    df = pd.read_csv(SHEET_URL)
+    new_data = df[df['status'] == 'new']
+    
+    if new_data.empty: return print("Нет новых записей")
 
-    # 2. Получаем текущий список из NRMS
-    r_current = requests.post("https://nrms.5verst.ru/api/v1/event/volunteer/list", 
-                             json={"event_id": EVENT_ID, "event_date": current_date}, headers=headers)
+    # 2. Получаем текущий список с сайта, чтобы не удалить тех, кто уже там
+    r_curr = requests.post("https://nrms.5verst.ru/api/v1/event/volunteer/list", 
+                          json={"event_id": EVENT_ID, "event_date": target_date}, headers=headers)
     
-    vol_list = []
-    # Сохраняем тех, кто уже записан на сайте
-    if 'volunteer_list' in r_current.json().get('result', {}):
-        for v in r_current.json()['result']['volunteer_list']:
-            vol_list.append({"verst_id": v['verst_id'], "role_id": v['role_id']})
-    
-    # 3. Добавляем новых из Google Таблицы
-    for _, row in new_volunteers.iterrows():
-        vid = int(float(row['verst_id'])) # защита от формата float в CSV
+    volunteers = []
+    if r_curr.status_code == 200:
+        existing = r_curr.json().get('result', {}).get('volunteer_list', [])
+        volunteers = [{"verst_id": v['verst_id'], "role_id": v['role_id']} for v in existing]
+
+    # 3. Добавляем новых
+    for _, row in new_data.iterrows():
+        vid = int(row['verst_id'])
         rid = int(row['role_id'])
-        # Проверка, чтобы не дублировать
-        if not any(v['verst_id'] == vid and v['role_id'] == rid for v in vol_list):
-            vol_list.append({"verst_id": vid, "role_id": rid})
+        if not any(v['verst_id'] == vid and v['role_id'] == rid for v in volunteers):
+            volunteers.append({"verst_id": vid, "role_id": rid})
 
-    # 4. Сохраняем всё в NRMS
+    # 4. Сохраняем в NRMS
     payload = {
         "event_id": EVENT_ID,
-        "date": current_date,
+        "date": target_date,
         "upload_status_id": 1,
-        "volunteers": vol_list
+        "volunteers": volunteers
     }
-    
-    res = requests.post("https://nrms.5verst.ru/api/v1/volunteer/event/save", 
-                       json=payload, headers=headers)
-    
-    if res.status_code == 200:
-        print(f"Успешно! В списке теперь {len(vol_list)} волонтеров.")
-    else:
-        print(f"Ошибка сохранения: {res.text}")
+    res = requests.post("https://nrms.5verst.ru/api/v1/volunteer/event/save", json=payload, headers=headers)
+    print(f"Результат NRMS: {res.status_code}")
 
 if __name__ == "__main__":
-    sync()
+    run_sync()
