@@ -11,24 +11,15 @@
         h2 { color: #2B326D; font-size: 18px; margin-top: 0; margin-bottom: 10px; }
         input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; outline: none; }
         input:focus { border-color: #2B326D; }
-        
         button { width: 100%; padding: 14px; background: #E6564C; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
         button:disabled { background: #ccc; cursor: not-allowed; }
-
         #search_wrapper { position: relative; }
-        #search_results { 
-            background: white; border: 1px solid #ddd; border-radius: 8px; 
-            max-height: 250px; overflow-y: auto; display: none; 
-            position: absolute; width: 100%; z-index: 1000;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-            margin-top: -5px;
-        }
+        #search_results { background: white; border: 1px solid #ddd; border-radius: 8px; max-height: 250px; overflow-y: auto; display: none; position: absolute; width: 100%; z-index: 1000; box-shadow: 0 8px 24px rgba(0,0,0,0.15); margin-top: -5px; }
         .search-item { padding: 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: 0.2s; }
         .search-item:hover { background: #f0f2ff; }
         .search-item b { color: #2B326D; display: block; font-size: 14px; }
         .search-item small { color: #666; font-size: 12px; }
         .loading-spinner { padding: 12px; text-align: center; color: #666; font-size: 13px; }
-
         .volunteer-list { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
         .volunteer-list td { padding: 10px 8px; border-bottom: 1px solid #eee; }
         .role-tag { background: #f0f2ff; color: #2B326D; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
@@ -95,8 +86,8 @@
 <script>
     vkBridge.send("VKWebAppInit");
 
-    // ИСПОЛЬЗУЕМ ТВОЮ НОВУЮ РАБОЧУЮ ССЫЛКУ
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby1GCfDlsniTULwGp-FKM4xkMsR2hFSBliMjdPfG1LojsQlb7BfHJ11JzF_feUozYjtQg/exec';
+    // ПРОВЕРЬ, ЧТО ЭТОТ URL СОВПАДАЕТ С ТВОИМ ПОСЛЕДНИМ ДЕПЛОЕМ
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxJBVuR6wYJZCzWUYJ5S1V1p15Byh9IIji6XIp0i5XaPtYDQiLmkh0a76_VnsYq6p1a/exec';
     
     let selectedVolunteer = null;
     const searchInput = document.getElementById('verst_search');
@@ -132,12 +123,17 @@
             const response = await fetch(`${SCRIPT_URL}?search=${encodeURIComponent(query)}`);
             const resData = await response.json();
             
-            // Универсальная проверка структуры данных (из-за 401 и разных ответов API)
-            const volunteers = (resData.result && resData.result.data) ? resData.result.data : [];
+            // Улучшенная логика извлечения данных
+            let list = [];
+            if (resData.result && resData.result.data) {
+                list = resData.result.data;
+            } else if (resData.data) {
+                list = resData.data;
+            }
 
             resultsBox.innerHTML = '';
-            if (volunteers.length > 0) {
-                volunteers.forEach(v => {
+            if (list.length > 0) {
+                list.forEach(v => {
                     const div = document.createElement('div');
                     div.className = 'search-item';
                     div.innerHTML = `<b>${v.full_name}</b><small>ID: ${v.id} • ${v.home_event || 'Парк не указан'}</small>`;
@@ -153,23 +149,16 @@
                     resultsBox.appendChild(div);
                 });
             } else {
-                resultsBox.innerHTML = '<div class="loading-spinner">Никто не найден. Проверьте фамилию.</div>';
+                resultsBox.innerHTML = '<div class="loading-spinner">Никто не найден.</div>';
             }
         } catch (err) {
-            resultsBox.innerHTML = '<div class="loading-spinner">Ошибка связи с сервером</div>';
+            resultsBox.innerHTML = '<div class="loading-spinner">Ошибка. Попробуйте еще раз.</div>';
         }
     }
 
-    document.addEventListener('click', (e) => {
-        if (!document.getElementById('search_wrapper').contains(e.target)) {
-            resultsBox.style.display = 'none';
-        }
-    });
-
     async function sendData() {
         const roleSelect = document.getElementById('role_id');
-        if (!selectedVolunteer) return alert("Выберите волонтера!");
-        if (!roleSelect.value) return alert("Выберите роль!");
+        if (!selectedVolunteer || !roleSelect.value) return;
 
         const payload = {
             verst_id: selectedVolunteer.id,
@@ -191,9 +180,8 @@
             alert("Готово! Ты в списке.");
             location.reload();
         } catch(e) {
-            alert("Ошибка отправки данных");
+            alert("Ошибка записи.");
             submitBtn.disabled = false;
-            submitBtn.innerText = "Записаться";
         }
     }
 
