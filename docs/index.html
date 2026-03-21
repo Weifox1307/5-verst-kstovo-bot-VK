@@ -86,8 +86,8 @@
 <script>
     vkBridge.send("VKWebAppInit");
 
-    // ПРОВЕРЬ, ЧТО ЭТОТ URL СОВПАДАЕТ С ТВОИМ ПОСЛЕДНИМ ДЕПЛОЕМ
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxJBVuR6wYJZCzWUYJ5S1V1p15Byh9IIji6XIp0i5XaPtYDQiLmkh0a76_VnsYq6p1a/exec';
+    // ПРОВЕРЬ URL ПОСЛЕ НОВОГО ДЕПЛОЯ
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfv59I43UClF-ZHEpLkrGkK2-5Yfm_8SsRyFztSSi3O0Wt7ZzaBMw4Atph3BKkEIQJIQ/exec';
     
     let selectedVolunteer = null;
     const searchInput = document.getElementById('verst_search');
@@ -123,12 +123,14 @@
             const response = await fetch(`${SCRIPT_URL}?search=${encodeURIComponent(query)}`);
             const resData = await response.json();
             
-            // Улучшенная логика извлечения данных
+            // Универсальный парсинг ответа
             let list = [];
             if (resData.result && resData.result.data) {
                 list = resData.result.data;
             } else if (resData.data) {
                 list = resData.data;
+            } else if (Array.isArray(resData)) {
+                list = resData;
             }
 
             resultsBox.innerHTML = '';
@@ -136,11 +138,11 @@
                 list.forEach(v => {
                     const div = document.createElement('div');
                     div.className = 'search-item';
-                    div.innerHTML = `<b>${v.full_name}</b><small>ID: ${v.id} • ${v.home_event || 'Парк не указан'}</small>`;
+                    div.innerHTML = `<b>${v.full_name}</b><small>ID: ${v.id} • ${v.home_event || ''}</small>`;
                     
                     div.onclick = () => {
                         selectedVolunteer = v;
-                        searchInput.value = `${v.full_name} (ID: ${v.id})`;
+                        searchInput.value = v.full_name;
                         resultsBox.style.display = 'none';
                         searchInput.style.borderColor = "#4bb34b";
                         submitBtn.disabled = false;
@@ -149,10 +151,10 @@
                     resultsBox.appendChild(div);
                 });
             } else {
-                resultsBox.innerHTML = '<div class="loading-spinner">Никто не найден.</div>';
+                resultsBox.innerHTML = '<div class="loading-spinner">Никто не найден. Попробуйте только фамилию.</div>';
             }
         } catch (err) {
-            resultsBox.innerHTML = '<div class="loading-spinner">Ошибка. Попробуйте еще раз.</div>';
+            resultsBox.innerHTML = '<div class="loading-spinner">Ошибка поиска. Попробуйте снова.</div>';
         }
     }
 
