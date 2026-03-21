@@ -95,8 +95,8 @@
 <script>
     vkBridge.send("VKWebAppInit");
 
-    // ЗАМЕНИ НА СВОЙ URL ПОСЛЕ ПЕРЕДЕПЛОЯ
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbweQBGtLhjZCud6sJWqXN57nkJ69FlH3vxgavacZFsUnT1njLTpbwneffmGwAQmB2BAeQ/exec';
+    // ИСПОЛЬЗУЕМ ТВОЮ НОВУЮ РАБОЧУЮ ССЫЛКУ
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby1GCfDlsniTULwGp-FKM4xkMsR2hFSBliMjdPfG1LojsQlb7BfHJ11JzF_feUozYjtQg/exec';
     
     let selectedVolunteer = null;
     const searchInput = document.getElementById('verst_search');
@@ -129,10 +129,11 @@
         resultsBox.style.display = 'block';
 
         try {
-            // Теперь стучимся в свой Apps Script через GET запрос с параметром search
             const response = await fetch(`${SCRIPT_URL}?search=${encodeURIComponent(query)}`);
             const resData = await response.json();
-            const volunteers = resData.result.data || [];
+            
+            // Универсальная проверка структуры данных (из-за 401 и разных ответов API)
+            const volunteers = (resData.result && resData.result.data) ? resData.result.data : [];
 
             resultsBox.innerHTML = '';
             if (volunteers.length > 0) {
@@ -152,10 +153,10 @@
                     resultsBox.appendChild(div);
                 });
             } else {
-                resultsBox.innerHTML = '<div class="loading-spinner">Никто не найден</div>';
+                resultsBox.innerHTML = '<div class="loading-spinner">Никто не найден. Проверьте фамилию.</div>';
             }
         } catch (err) {
-            resultsBox.innerHTML = '<div class="loading-spinner">Ошибка поиска через сервер</div>';
+            resultsBox.innerHTML = '<div class="loading-spinner">Ошибка связи с сервером</div>';
         }
     }
 
@@ -190,8 +191,9 @@
             alert("Готово! Ты в списке.");
             location.reload();
         } catch(e) {
-            alert("Ошибка отправки");
+            alert("Ошибка отправки данных");
             submitBtn.disabled = false;
+            submitBtn.innerText = "Записаться";
         }
     }
 
@@ -201,12 +203,13 @@
             const data = await res.json();
             const tbody = document.querySelector('#queue_table tbody');
             tbody.innerHTML = "";
-            // Показываем последние 15 записей
-            data.reverse().slice(0, 15).forEach(item => {
-                let row = tbody.insertRow();
-                row.insertCell(0).innerHTML = `<span class="role-tag">${item.role_name}</span>`;
-                row.insertCell(1).innerText = item.full_name;
-            });
+            if (Array.isArray(data)) {
+                data.reverse().slice(0, 15).forEach(item => {
+                    let row = tbody.insertRow();
+                    row.insertCell(0).innerHTML = `<span class="role-tag">${item.role_name}</span>`;
+                    row.insertCell(1).innerText = item.full_name;
+                });
+            }
         } catch(e) {}
     }
 
