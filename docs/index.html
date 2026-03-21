@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+    <style>
+        body { font-family: -apple-system, system-ui, Helvetica; padding: 20px; background-color: #f5f5f5; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        input, select, button { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { background: #E6564C; color: white; border: none; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2 style="color: #2B326D; margin-top: 0;">Волонтер 5 вёрст 🧡</h2>
+        <p>Введите ваш ID (только цифры) и выберите роль.</p>
+        <input type="number" id="v_id" placeholder="Например: 790217375">
+        <select id="role">
+            <option value="2">Секундомер</option>
+            <option value="11">Сканер</option>
+            <option value="19">Замыкающий</option>
+            <option value="7">Маршал</option>
+            <option value="5">Фотограф</option>
+        </select>
+        <button onclick="submitForm()">Записаться на старт</button>
+    </div>
+
+    <script>
+        vkBridge.send("VKWebAppInit");
+        async function submitForm() {
+            const v_id = document.getElementById('v_id').value;
+            const role = document.getElementById('role').value;
+            if(!v_id) return alert("Введите ID!");
+
+            const scriptURL = "https://script.google.com/macros/s/AKfycbzzE-UcKg9ToKnNFzy5ZkWaySkbWkMuvAcuHMsTuQHR9RvXRKGFf8oOVzhnBsCCmgdhNA/exec";
+            
+            try {
+                await fetch(scriptURL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({ verst_id: v_id, role_id: role })
+                });
+                alert("Ура! Заявка в очереди. Бот обработает её в ближайшее время.");
+                vkBridge.send("VKWebAppClose");
+            } catch (e) { alert("Ошибка при отправке"); }
+        }
+    </script>
+</body>
+</html>
