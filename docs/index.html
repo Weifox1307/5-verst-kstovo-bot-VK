@@ -9,10 +9,8 @@
         body { font-family: -apple-system, sans-serif; padding: 15px; background: #f5f5f5; color: #333; }
         .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
         h2 { color: #2B326D; font-size: 18px; margin-top: 0; margin-bottom: 10px; }
-        
         input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
         button { width: 100%; padding: 14px; background: #E6564C; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        
         #search_results { 
             background: white; border: 1px solid #eee; border-radius: 8px; 
             max-height: 200px; overflow-y: auto; display: none; 
@@ -22,7 +20,6 @@
         .search-item { padding: 10px; border-bottom: 1px solid #f9f9f9; cursor: pointer; font-size: 13px; }
         .search-item:hover { background: #f0f2ff; }
         .search-item b { color: #2B326D; display: block; }
-
         .volunteer-list { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
         .volunteer-list td { padding: 10px 8px; border-bottom: 1px solid #eee; }
         .role-tag { background: #f0f2ff; color: #2B326D; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
@@ -32,12 +29,12 @@
 
 <div class="card">
     <h2>Записаться на старт</h2>
-    <input type="text" id="verst_search" placeholder="ID или Фамилия..." autocomplete="off">
+    <input type="text" id="verst_search" placeholder="Введите фамилию или ID..." autocomplete="off">
     <div id="search_results"></div>
     
     <select id="role_id">
         <option value="" disabled selected>Выберите позицию</option>
-        <optgroup label="Основные (шаблон)">
+        <optgroup label="Основные">
             <option value="1">Организатор</option>
             <option value="2">Секундомер</option>
             <option value="5">Фотограф</option>
@@ -47,7 +44,7 @@
             <option value="13">Раздача карточек позиций</option>
             <option value="19">Замыкающий</option>
         </optgroup>
-        <optgroup label="Все 38 позиций">
+        <optgroup label="Дополнительные">
             <option value="3">Сортировка карточек</option>
             <option value="4">Обработка результатов</option>
             <option value="6">Связи с общественностью</option>
@@ -87,37 +84,44 @@
 <script>
     vkBridge.send("VKWebAppInit");
 
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzzE-UcKg9ToKnNFzy5ZkWaySkbWkMuvAcuHMsTuQHR9RvXRKGFf8oOVzhnBsCCmgdhNA/exec';
-    const SEARCH_API = 'https://nrms.5verst.ru/api/v1/volunteer/getListByIdPart';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwYy9KJTwR5m2KVdGO9KLSl4Pf0n2-JAWUX8-E_14eBu0mrbwHiW4FIVZuMqHkO1jErzQ/exec';
+    
+    // API Эндпоинты
+    const API_BY_ID = 'https://nrms.5verst.ru/api/v1/athlete/getListByIdPart';
+    const API_BY_NAME = 'https://nrms.5verst.ru/api/v1/athlete/getListByNamePart';
     
     let selectedVolunteer = null;
 
     const searchInput = document.getElementById('verst_search');
     const resultsBox = document.getElementById('search_results');
 
-    // Логика поиска (сработает, если нет блокировки CORS)
     searchInput.addEventListener('input', async (e) => {
         const query = e.target.value.trim();
         if (query.length < 3) { resultsBox.style.display = 'none'; return; }
 
+        // Определяем какой API использовать: если только цифры - поиск по ID, иначе по имени
+        const isIdSearch = /^\d+$/.test(query);
+        const api_url = isIdSearch ? API_BY_ID : API_BY_NAME;
+        const payload = isIdSearch ? { "search": query } : { "name": query, "event_id": 10079, "registered_only": false };
+
         try {
-            const response = await fetch(SEARCH_API, {
+            const response = await fetch(api_url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ "search": query })
+                body: JSON.stringify(payload)
             });
-            const data = await response.json();
-            const volunteers = data.result.volunteers;
+            const resData = await response.json();
+            const volunteers = resData.result.data; // В обоих методах теперь data
 
             resultsBox.innerHTML = '';
             if (volunteers && volunteers.length > 0) {
                 volunteers.forEach(v => {
                     const div = document.createElement('div');
                     div.className = 'search-item';
-                    div.innerHTML = `<b>${v.first_name} ${v.last_name}</b> (ID: ${v.id})`;
+                    div.innerHTML = `<b>${v.full_name}</b> (ID: ${v.id}) <br><small>${v.home_event || ''}</small>`;
                     div.onclick = () => {
                         selectedVolunteer = v;
-                        searchInput.value = `${v.first_name} ${v.last_name} (${v.id})`;
+                        searchInput.value = `${v.full_name} (${v.id})`;
                         resultsBox.style.display = 'none';
                         searchInput.style.borderColor = "#4bb34b";
                     };
@@ -126,7 +130,7 @@
                 resultsBox.style.display = 'block';
             }
         } catch (err) {
-            console.log("Поиск заблокирован CORS, используем ручной ввод");
+            console.log("CORS/Network error");
         }
     });
 
@@ -139,25 +143,24 @@
         if (!rawValue) return alert("Введите Фамилию или ID!");
         if (!rId) return alert("Выберите роль!");
 
-        // Если выбрали из поиска - берем данные оттуда. 
-        // Если поиск не сработал - берем цифры из поля как ID, а весь текст как имя.
         const payload = {
-            verst_id: selectedVolunteer ? selectedVolunteer.id : rawValue.replace(/[^0-9]/g, '') || "000",
+            verst_id: selectedVolunteer ? selectedVolunteer.id : (rawValue.match(/\d+/) || ["000"])[0],
             role_id: rId,
             role_name: rName,
-            full_name: selectedVolunteer ? `${selectedVolunteer.first_name} ${selectedVolunteer.last_name}` : rawValue
+            full_name: selectedVolunteer ? selectedVolunteer.full_name : rawValue
         };
 
         try {
+            // Отправка в Google Таблицу
             await fetch(SCRIPT_URL, {
                 method: 'POST',
                 mode: 'no-cors',
                 body: JSON.stringify(payload)
             });
-            alert("Заявка отправлена!");
+            alert("Заявка успешно отправлена!");
             location.reload();
         } catch(e) {
-            alert("Ошибка сети");
+            alert("Ошибка при отправке");
         }
     }
 
@@ -170,7 +173,7 @@
             data.forEach(item => {
                 let row = tbody.insertRow();
                 row.insertCell(0).innerHTML = `<span class="role-tag">${item.role_name || item.role_id}</span>`;
-                row.insertCell(1).innerText = item.name || item.id;
+                row.insertCell(1).innerText = item.full_name || item.name || item.id;
             });
         } catch(e) {}
     }
