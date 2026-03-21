@@ -6,42 +6,33 @@
     <title>Волонтерство Кстово</title>
     <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
     <style>
-        body { font-family: -apple-system, system-ui, sans-serif; padding: 15px; background: #f5f5f5; color: #333; }
+        body { font-family: -apple-system, sans-serif; padding: 15px; background: #f5f5f5; color: #333; }
         .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
         h2 { color: #2B326D; font-size: 18px; margin-top: 0; margin-bottom: 10px; }
         
         input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
         button { width: 100%; padding: 14px; background: #E6564C; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         
-        /* Стили для выпадающего списка поиска */
         #search_results { 
-            background: white; 
-            border: 1px solid #eee; 
-            border-radius: 8px; 
-            max-height: 200px; 
-            overflow-y: auto; 
-            display: none; 
-            margin-top: -5px;
-            position: relative;
-            z-index: 100;
+            background: white; border: 1px solid #eee; border-radius: 8px; 
+            max-height: 200px; overflow-y: auto; display: none; 
+            margin-top: -5px; position: relative; z-index: 100;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
         .search-item { padding: 10px; border-bottom: 1px solid #f9f9f9; cursor: pointer; font-size: 13px; }
         .search-item:hover { background: #f0f2ff; }
         .search-item b { color: #2B326D; display: block; }
-        .search-item span { color: #666; font-size: 11px; }
 
         .volunteer-list { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
-        .volunteer-list th { text-align: left; color: #888; padding: 8px; font-weight: normal; border-bottom: 2px solid #eee; }
         .volunteer-list td { padding: 10px 8px; border-bottom: 1px solid #eee; }
-        .role-tag { background: #f0f2ff; color: #2B326D; padding: 3px 6px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+        .role-tag { background: #f0f2ff; color: #2B326D; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
     </style>
 </head>
 <body>
 
 <div class="card">
     <h2>Записаться на старт</h2>
-    <input type="text" id="verst_search" placeholder="Введите Фамилию, Имя или ID..." autocomplete="off">
+    <input type="text" id="verst_search" placeholder="ID или Фамилия..." autocomplete="off">
     <div id="search_results"></div>
     
     <select id="role_id">
@@ -56,7 +47,7 @@
             <option value="13">Раздача карточек позиций</option>
             <option value="19">Замыкающий</option>
         </optgroup>
-        <optgroup label="Все позиции">
+        <optgroup label="Все 38 позиций">
             <option value="3">Сортировка карточек</option>
             <option value="4">Обработка результатов</option>
             <option value="6">Связи с общественностью</option>
@@ -89,9 +80,6 @@
 <div class="card">
     <h2>Кто уже в списке</h2>
     <table class="volunteer-list" id="queue_table">
-        <thead>
-            <tr><th>Позиция</th><th>Волонтер</th></tr>
-        </thead>
         <tbody></tbody>
     </table>
 </div>
@@ -107,13 +95,10 @@
     const searchInput = document.getElementById('verst_search');
     const resultsBox = document.getElementById('search_results');
 
-    // Логика поиска
+    // Логика поиска (сработает, если нет блокировки CORS)
     searchInput.addEventListener('input', async (e) => {
         const query = e.target.value.trim();
-        if (query.length < 3) {
-            resultsBox.style.display = 'none';
-            return;
-        }
+        if (query.length < 3) { resultsBox.style.display = 'none'; return; }
 
         try {
             const response = await fetch(SEARCH_API, {
@@ -129,20 +114,19 @@
                 volunteers.forEach(v => {
                     const div = document.createElement('div');
                     div.className = 'search-item';
-                    div.innerHTML = `<b>${v.first_name} ${v.last_name}</b>
-                                     <span>ID: ${v.id} | Парк: ${v.home_run_name || '—'}</span>`;
+                    div.innerHTML = `<b>${v.first_name} ${v.last_name}</b> (ID: ${v.id})`;
                     div.onclick = () => {
                         selectedVolunteer = v;
                         searchInput.value = `${v.first_name} ${v.last_name} (${v.id})`;
                         resultsBox.style.display = 'none';
-                        searchInput.style.borderColor = "#4bb34b"; // Подсветим зеленым, что выбор сделан
+                        searchInput.style.borderColor = "#4bb34b";
                     };
                     resultsBox.appendChild(div);
                 });
                 resultsBox.style.display = 'block';
             }
         } catch (err) {
-            console.error("Ошибка API поиска");
+            console.log("Поиск заблокирован CORS, используем ручной ввод");
         }
     });
 
@@ -152,21 +136,17 @@
         const rId = roleSelect.value;
         const rName = roleSelect.options[roleSelect.selectedIndex].text;
 
-        if (!rId) return alert("Выберите позицию!");
-        if (!rawValue) return alert("Введите ID или Фамилию!");
+        if (!rawValue) return alert("Введите Фамилию или ID!");
+        if (!rId) return alert("Выберите роль!");
 
-        // Формируем данные: если кликнули по поиску - берем из объекта, 
-        // если ввели руками - пытаемся достать ID из текста или берем весь текст
+        // Если выбрали из поиска - берем данные оттуда. 
+        // Если поиск не сработал - берем цифры из поля как ID, а весь текст как имя.
         const payload = {
-            verst_id: selectedVolunteer ? selectedVolunteer.id : rawValue.replace(/[^0-9]/g, ''),
+            verst_id: selectedVolunteer ? selectedVolunteer.id : rawValue.replace(/[^0-9]/g, '') || "000",
             role_id: rId,
             role_name: rName,
             full_name: selectedVolunteer ? `${selectedVolunteer.first_name} ${selectedVolunteer.last_name}` : rawValue
         };
-
-        if (!payload.verst_id) {
-            return alert("Не удалось определить ID. Пожалуйста, выберите волонтера из списка или введите цифровой ID.");
-        }
 
         try {
             await fetch(SCRIPT_URL, {
