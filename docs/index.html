@@ -11,15 +11,21 @@
         h2 { color: #2B326D; font-size: 18px; margin-top: 0; margin-bottom: 10px; }
         input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
         button { width: 100%; padding: 14px; background: #E6564C; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        
+        /* Стили для выпадающего списка как на NRMS */
+        #search_wrapper { position: relative; }
         #search_results { 
-            background: white; border: 1px solid #eee; border-radius: 8px; 
-            max-height: 200px; overflow-y: auto; display: none; 
-            margin-top: -5px; position: relative; z-index: 100;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            background: white; border: 1px solid #ddd; border-radius: 8px; 
+            max-height: 250px; overflow-y: auto; display: none; 
+            position: absolute; width: 100%; z-index: 1000;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            margin-top: -5px;
         }
-        .search-item { padding: 10px; border-bottom: 1px solid #f9f9f9; cursor: pointer; font-size: 13px; }
+        .search-item { padding: 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; font-size: 13px; line-height: 1.4; }
         .search-item:hover { background: #f0f2ff; }
-        .search-item b { color: #2B326D; display: block; }
+        .search-item b { color: #2B326D; display: block; font-size: 14px; }
+        .search-item small { color: #666; }
+
         .volunteer-list { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
         .volunteer-list td { padding: 10px 8px; border-bottom: 1px solid #eee; }
         .role-tag { background: #f0f2ff; color: #2B326D; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
@@ -29,8 +35,10 @@
 
 <div class="card">
     <h2>Записаться на старт</h2>
-    <input type="text" id="verst_search" placeholder="Введите фамилию или ID..." autocomplete="off">
-    <div id="search_results"></div>
+    <div id="search_wrapper">
+        <input type="text" id="verst_search" placeholder="Введите фамилию или ID..." autocomplete="off">
+        <div id="search_results"></div>
+    </div>
     
     <select id="role_id">
         <option value="" disabled selected>Выберите позицию</option>
@@ -86,23 +94,28 @@
 
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwYy9KJTwR5m2KVdGO9KLSl4Pf0n2-JAWUX8-E_14eBu0mrbwHiW4FIVZuMqHkO1jErzQ/exec';
     
-    // API Эндпоинты
     const API_BY_ID = 'https://nrms.5verst.ru/api/v1/athlete/getListByIdPart';
     const API_BY_NAME = 'https://nrms.5verst.ru/api/v1/athlete/getListByNamePart';
     
     let selectedVolunteer = null;
-
     const searchInput = document.getElementById('verst_search');
     const resultsBox = document.getElementById('search_results');
 
     searchInput.addEventListener('input', async (e) => {
-        const query = e.target.value.trim();
+        let query = e.target.value.trim();
         if (query.length < 3) { resultsBox.style.display = 'none'; return; }
 
-        // Определяем какой API использовать: если только цифры - поиск по ID, иначе по имени
-        const isIdSearch = /^\d+$/.test(query);
+        // Логика определения типа поиска как на сайте NRMS
+        // Убираем префикс "A", если он есть, для проверки на число
+        const cleanQuery = query.replace(/^A/i, '');
+        const isIdSearch = /^\d+$/.test(cleanQuery);
+        
         const api_url = isIdSearch ? API_BY_ID : API_BY_NAME;
-        const payload = isIdSearch ? { "search": query } : { "name": query, "event_id": 10079, "registered_only": false };
+        
+        // ВАЖНО: Для поиска по ID API требует ключ "id", а не "search"
+        const payload = isIdSearch 
+            ? { "id": cleanQuery } 
+            : { "name": query, "event_id": 10079, "registered_only": false };
 
         try {
             const response = await fetch(api_url, {
@@ -111,14 +124,16 @@
                 body: JSON.stringify(payload)
             });
             const resData = await response.json();
-            const volunteers = resData.result.data; // В обоих методах теперь data
+            const volunteers = resData.result.data;
 
             resultsBox.innerHTML = '';
             if (volunteers && volunteers.length > 0) {
                 volunteers.forEach(v => {
                     const div = document.createElement('div');
                     div.className = 'search-item';
-                    div.innerHTML = `<b>${v.full_name}</b> (ID: ${v.id}) <br><small>${v.home_event || ''}</small>`;
+                    // Форматируем вывод как в подсказках на твоем скрине
+                    div.innerHTML = `<b>${v.full_name}</b><small>ID: ${v.id} • ${v.home_event || 'Нет домашнего парка'}</small>`;
+                    
                     div.onclick = () => {
                         selectedVolunteer = v;
                         searchInput.value = `${v.full_name} (${v.id})`;
@@ -130,37 +145,60 @@
                 resultsBox.style.display = 'block';
             }
         } catch (err) {
-            console.log("CORS/Network error");
+            console.log("Ошибка API поиска");
+        }
+    });
+
+    // Закрытие списка при клике вне его
+    document.addEventListener('click', (e) => {
+        if (!document.getElementById('search_wrapper').contains(e.target)) {
+            resultsBox.style.display = 'none';
         }
     });
 
     async function sendData() {
         const rawValue = searchInput.value.trim();
         const roleSelect = document.getElementById('role_id');
-        const rId = roleSelect.value;
-        const rName = roleSelect.options[roleSelect.selectedIndex].text;
-
+        
         if (!rawValue) return alert("Введите Фамилию или ID!");
-        if (!rId) return alert("Выберите роль!");
+        if (!roleSelect.value) return alert("Выберите роль!");
+
+        // Продвинутая логика извлечения ID, чтобы не было "0"
+        let finalId = "0";
+        if (selectedVolunteer) {
+            finalId = selectedVolunteer.id;
+        } else {
+            // Если не выбрали из списка, вытаскиваем только цифры из поля
+            const foundId = rawValue.match(/\d+/);
+            finalId = foundId ? foundId[0] : "0";
+        }
 
         const payload = {
-            verst_id: selectedVolunteer ? selectedVolunteer.id : (rawValue.match(/\d+/) || ["000"])[0],
-            role_id: rId,
-            role_name: rName,
-            full_name: selectedVolunteer ? selectedVolunteer.full_name : rawValue
+            verst_id: finalId,
+            role_id: roleSelect.value,
+            role_name: roleSelect.options[roleSelect.selectedIndex].text,
+            full_name: selectedVolunteer ? selectedVolunteer.full_name : rawValue.split('(')[0].trim()
         };
 
         try {
-            // Отправка в Google Таблицу
+            // Показываем пользователю, что идет отправка
+            const btn = document.querySelector('button');
+            const originalText = btn.innerText;
+            btn.innerText = "Отправка...";
+            btn.disabled = true;
+
             await fetch(SCRIPT_URL, {
                 method: 'POST',
                 mode: 'no-cors',
                 body: JSON.stringify(payload)
             });
-            alert("Заявка успешно отправлена!");
+            
+            alert("Вы успешно записаны!");
             location.reload();
         } catch(e) {
-            alert("Ошибка при отправке");
+            alert("Ошибка связи с таблицей");
+            btn.innerText = originalText;
+            btn.disabled = false;
         }
     }
 
@@ -170,10 +208,11 @@
             const data = await res.json();
             const tbody = document.querySelector('#queue_table tbody');
             tbody.innerHTML = "";
-            data.forEach(item => {
+            // Показываем последние записи вверху
+            data.reverse().slice(0, 10).forEach(item => {
                 let row = tbody.insertRow();
-                row.insertCell(0).innerHTML = `<span class="role-tag">${item.role_name || item.role_id}</span>`;
-                row.insertCell(1).innerText = item.full_name || item.name || item.id;
+                row.insertCell(0).innerHTML = `<span class="role-tag">${item.role_name}</span>`;
+                row.insertCell(1).innerText = item.full_name;
             });
         } catch(e) {}
     }
