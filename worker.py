@@ -4,7 +4,7 @@ from datetime import timedelta
 # Настройки из GitHub Secrets
 NRMS_USER = os.getenv("NRMS_USERNAME")
 NRMS_PASS = os.getenv("NRMS_PASSWORD")
-EVENT_ID = 10061 
+EVENT_ID = 10079
 SHEET_URL = os.getenv("SHEET_CSV_URL")
 
 def get_next_saturday():
