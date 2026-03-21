@@ -3,48 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Волонтерство Кстово</title>
     <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
     <style>
-        body { font-family: -apple-system, system-ui, Helvetica; padding: 20px; background-color: #f5f5f5; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        input, select, button { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { background: #E6564C; color: white; border: none; font-weight: bold; cursor: pointer; }
+        body { font-family: -apple-system, sans-serif; padding: 15px; background: #f5f5f5; }
+        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h2 { color: #2B326D; font-size: 18px; margin-top: 0; }
+        input, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #E6564C; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .volunteer-list { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .volunteer-list th { text-align: left; color: #888; padding: 8px; }
+        .volunteer-list td { padding: 8px; border-top: 1px solid #eee; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2 style="color: #2B326D; margin-top: 0;">Волонтер 5 вёрст 🧡</h2>
-        <p>Введите ваш ID (только цифры) и выберите роль.</p>
-        <input type="number" id="v_id" placeholder="Например: 790217375">
-        <select id="role">
-            <option value="2">Секундомер</option>
-            <option value="11">Сканер</option>
-            <option value="19">Замыкающий</option>
-            <option value="7">Маршал</option>
-            <option value="5">Фотограф</option>
-        </select>
-        <button onclick="submitForm()">Записаться на старт</button>
-    </div>
 
-    <script>
-        vkBridge.send("VKWebAppInit");
-        async function submitForm() {
-            const v_id = document.getElementById('v_id').value;
-            const role = document.getElementById('role').value;
-            if(!v_id) return alert("Введите ID!");
+<div class="card">
+    <h2>Записаться на старт</h2>
+    <input type="text" id="verst_id" placeholder="Введите ваш ID (например, 790217375)">
+    
+    <select id="role_id">
+        <option value="" disabled>--- Основные позиции ---</option>
+        <option value="1">Организатор</option>
+        <option value="2">Секундомер</option>
+        <option value="5">Фотограф</option>
+        <option value="7">Маршал</option>
+        <option value="8">Подготовка мероприятия</option>
+        <option value="11">Сканирование штрих-кодов</option>
+        <option value="13">Раздача карточек позиций</option>
+        <option value="19">Замыкающий</option>
+        
+        <option value="" disabled>--- Дополнительные позиции ---</option>
+        <option value="3">Сортировка карточек</option>
+        <option value="4">Обработка результатов</option>
+        <option value="6">Связи с общественностью</option>
+        <option value="9">Хранение и доставка оборудования</option>
+        <option value="10">Разное</option>
+        <option value="12">Завершение мероприятия</option>
+        <option value="14">Проверка карточек позиций</option>
+        <option value="15">Инструктаж новых участников</option>
+        <option value="16">Организация финиша</option>
+        <option value="17">Ведущий велосипед</option>
+        <option value="18">Помощь в раздаче карточек позиций</option>
+        <option value="20">Координация волонтёров</option>
+        <option value="23">Составление отчёта</option>
+        <option value="28">Пейсмейкер</option>
+        <option value="30">Лидер для слабовидящих</option>
+        <option value="31">Проведение разминки</option>
+        <option value="32">Сурдопереводчик</option>
+        <option value="33">Координатор парковки</option>
+        <option value="34">Проверка трассы</option>
+        <option value="35">Разметка трассы</option>
+        <option value="36">Ведущий мероприятия</option>
+        <option value="37">Проведение предстартового брифинга</option>
+        <option value="38">Видеограф</option>
+    </select>
+    
+    <button onclick="sendData()">Записаться</button>
+</div>
 
-            const scriptURL = "https://script.google.com/macros/s/AKfycbzzE-UcKg9ToKnNFzy5ZkWaySkbWkMuvAcuHMsTuQHR9RvXRKGFf8oOVzhnBsCCmgdhNA/exec";
+<div class="card">
+    <h2>Кто уже в списке</h2>
+    <table class="volunteer-list" id="queue_table">
+        <thead>
+            <tr><th>Позиция</th><th>Волонтер</th></tr>
+        </thead>
+        <tbody>
+            </tbody>
+    </table>
+</div>
+
+<script>
+    vkBridge.send("VKWebAppInit");
+
+    // Словарь ролей для красивого отображения в таблице
+    const roleNames = {
+        1: "Организатор", 2: "Секундомер", 3: "Сортировка карточек", 4: "Обработка результатов",
+        5: "Фотограф", 6: "Связи с общественностью", 7: "Маршал", 8: "Подготовка мероприятия",
+        9: "Хранение и доставка оборудования", 10: "Разное", 11: "Сканирование штрих-кодов",
+        12: "Завершение мероприятия", 13: "Раздача карточек позиций", 14: "Проверка карточек позиций",
+        15: "Инструктаж новых участников", 16: "Организация финиша", 17: "Ведущий велосипед",
+        18: "Помощь в раздаче карточек позиций", 19: "Замыкающий", 20: "Координация волонтёров",
+        23: "Составление отчёта", 28: "Пейсмейкер", 30: "Лидер для слабовидящих",
+        31: "Проведение разминки", 32: "Сурдопереводчик", 33: "Координатор парковки",
+        34: "Проверка трассы", 35: "Разметка трассы", 36: "Ведущий мероприятия",
+        37: "Проведение предстартового брифинга", 38: "Видеограф"
+    };
+
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzzE-UcKg9ToKnNFzy5ZkWaySkbWkMuvAcuHMsTuQHR9RvXRKGFf8oOVzhnBsCCmgdhNA/exec';
+
+    async function loadQueue() {
+        try {
+            const res = await fetch(SCRIPT_URL);
+            const data = await res.json();
+            const tableBody = document.querySelector('#queue_table tbody');
+            tableBody.innerHTML = ""; // Очистка перед обновлением
             
-            try {
-                await fetch(scriptURL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify({ verst_id: v_id, role_id: role })
-                });
-                alert("Ура! Заявка в очереди. Бот обработает её в ближайшее время.");
-                vkBridge.send("VKWebAppClose");
-            } catch (e) { alert("Ошибка при отправке"); }
+            data.forEach(item => {
+                let row = tableBody.insertRow();
+                let roleName = roleNames[item.role_id] || "Позиция " + item.role_id;
+                row.insertCell(0).innerText = roleName;
+                row.insertCell(1).innerText = item.name || item.id;
+            });
+        } catch(e) {
+            console.log("Ошибка загрузки очереди");
         }
-    </script>
+    }
+
+    async function sendData() {
+        const vIdInput = document.getElementById('verst_id').value;
+        const rId = document.getElementById('role_id').value;
+
+        // Убираем букву А, если пользователь ее ввел
+        const vId = vIdInput.replace(/[^0-9]/g, '');
+
+        if(!vId) return alert("Введите ваш ID!");
+        if(!rId) return alert("Выберите позицию!");
+
+        const payload = {
+            verst_id: vId,
+            role_id: rId,
+            full_name: "Заявка из ВК" 
+        };
+
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors', // Важно для Google Scripts
+                body: JSON.stringify(payload)
+            });
+            alert("Заявка отправлена! Бот обновит NRMS в ближайшее время.");
+            location.reload();
+        } catch(e) {
+            alert("Ошибка при отправке данных");
+        }
+    }
+
+    loadQueue();
+</script>
 </body>
 </html>
