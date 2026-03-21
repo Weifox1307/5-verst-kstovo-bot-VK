@@ -10,19 +10,15 @@
         .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
         h2 { color: #2B326D; font-size: 18px; margin-top: 0; margin-bottom: 10px; }
         input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; outline: none; }
-        input:focus { border-color: #2B326D; }
-        button { width: 100%; padding: 14px; background: #E6564C; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
+        button { width: 100%; padding: 14px; background: #E6564C; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button:disabled { background: #ccc; }
         #search_wrapper { position: relative; }
-        #search_results { background: white; border: 1px solid #ddd; border-radius: 8px; max-height: 250px; overflow-y: auto; display: none; position: absolute; width: 100%; z-index: 1000; box-shadow: 0 8px 24px rgba(0,0,0,0.15); margin-top: -5px; }
-        .search-item { padding: 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: 0.2s; }
+        #search_results { background: white; border: 1px solid #ddd; border-radius: 8px; max-height: 250px; overflow-y: auto; display: none; position: absolute; width: 100%; z-index: 1000; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+        .search-item { padding: 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
         .search-item:hover { background: #f0f2ff; }
-        .search-item b { color: #2B326D; display: block; font-size: 14px; }
-        .search-item small { color: #666; font-size: 12px; }
-        .loading-spinner { padding: 12px; text-align: center; color: #666; font-size: 13px; }
         .volunteer-list { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
-        .volunteer-list td { padding: 10px 8px; border-bottom: 1px solid #eee; }
         .role-tag { background: #f0f2ff; color: #2B326D; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+        .loading-spinner { padding: 12px; text-align: center; color: #666; font-size: 13px; }
     </style>
 </head>
 <body>
@@ -30,7 +26,7 @@
 <div class="card">
     <h2>Записаться на старт</h2>
     <div id="search_wrapper">
-        <input type="text" id="verst_search" placeholder="Введите фамилию или ID..." autocomplete="off">
+        <input type="text" id="verst_search" placeholder="Фамилия или ID..." autocomplete="off">
         <div id="search_results"></div>
     </div>
     
@@ -73,127 +69,77 @@
         </optgroup>
     </select>
     
-    <button id="submit_btn" onclick="sendData()" disabled>Выберите человека из списка</button>
+    <button id="submit_btn" onclick="sendData()" disabled>Выберите человека</button>
 </div>
 
 <div class="card">
     <h2>Кто уже в списке</h2>
-    <table class="volunteer-list" id="queue_table">
-        <tbody></tbody>
-    </table>
+    <table class="volunteer-list" id="queue_table"><tbody></tbody></table>
 </div>
 
 <script>
     vkBridge.send("VKWebAppInit");
 
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz1KeHVGeUrZpfnmAMMIfsjRxPFzZ_-ViC9pHkAmZHzXxxJvH7DZGL5h8YYZkt8wUxAVA/exec';
+    // ЗАМЕНИ НА СВОЮ АКТУАЛЬНУЮ ССЫЛКУ ПОСЛЕ ОБНОВЛЕНИЯ CODE.GS
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwRJrDu4qsS1ttLu9raJ8V1f6BF0r-uYmu6WAe7EUay-YJl2qIzau4s03E8TYNIffNr2A/exec';
     
     let selectedVolunteer = null;
     const searchInput = document.getElementById('verst_search');
     const resultsBox = document.getElementById('search_results');
     const submitBtn = document.getElementById('submit_btn');
 
-    let debounceTimer;
-
     searchInput.addEventListener('input', (e) => {
-        clearTimeout(debounceTimer);
         const query = e.target.value.trim();
-        
-        selectedVolunteer = null;
-        submitBtn.disabled = true;
-        submitBtn.innerText = "Выберите человека из списка";
-        searchInput.style.borderColor = "#ddd";
-
-        if (query.length < 3) {
-            resultsBox.style.display = 'none';
-            return;
-        }
-
-        debounceTimer = setTimeout(() => {
-            fetchVolunteers(query);
-        }, 600);
+        if (query.length < 3) { resultsBox.style.display = 'none'; return; }
+        clearTimeout(window.searchTimeout);
+        window.searchTimeout = setTimeout(() => fetchVolunteers(query), 600);
     });
 
     async function fetchVolunteers(query) {
-        resultsBox.innerHTML = '<div class="loading-spinner">Ищем напрямую в 5 вёрст...</div>';
+        resultsBox.innerHTML = '<div class="loading-spinner">Ищем в базе...</div>';
         resultsBox.style.display = 'block';
 
-        const isId = /^\d+$/.test(query.replace(/^A/i, ''));
-        const cleanId = query.replace(/^A/i, '');
-        
-        // Используем прокси для обхода ограничений CORS, если они возникнут
-        const proxy = "https://corsproxy.io/?";
-        const apiUrl = isId 
-            ? 'https://nrms.5verst.ru/api/v1/athlete/getListByIdPart'
-            : 'https://nrms.5verst.ru/api/v1/athlete/getListByNamePart';
-
-        const payload = isId 
-            ? { "id": cleanId } 
-            : { "name": query.toUpperCase(), "event_id": 10079, "registered_only": false };
-
         try {
-            const response = await fetch(proxy + encodeURIComponent(apiUrl), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            
+            const response = await fetch(`${SCRIPT_URL}?search=${encodeURIComponent(query)}`);
             const resData = await response.json();
-            let list = resData.result?.data || resData.data || [];
+            const list = resData.result?.data || [];
 
             resultsBox.innerHTML = '';
             if (list.length > 0) {
                 list.forEach(v => {
                     const div = document.createElement('div');
                     div.className = 'search-item';
-                    div.innerHTML = `<b>${v.full_name}</b><small>ID: ${v.id} • ${v.home_event || ''}</small>`;
-                    
+                    div.innerHTML = `<b>${v.full_name}</b><small>ID: ${v.id}</small>`;
                     div.onclick = () => {
                         selectedVolunteer = v;
                         searchInput.value = v.full_name;
                         resultsBox.style.display = 'none';
-                        searchInput.style.borderColor = "#4bb34b";
                         submitBtn.disabled = false;
                         submitBtn.innerText = "Записаться";
                     };
                     resultsBox.appendChild(div);
                 });
             } else {
-                resultsBox.innerHTML = '<div class="loading-spinner">Ничего не найдено.</div>';
+                resultsBox.innerHTML = '<div class="loading-spinner">Никто не найден.</div>';
             }
-        } catch (err) {
-            console.error(err);
-            resultsBox.innerHTML = '<div class="loading-spinner">Ошибка. Попробуйте фамилию КАПСОМ.</div>';
+        } catch (e) {
+            resultsBox.innerHTML = '<div class="loading-spinner">Ошибка поиска.</div>';
         }
     }
 
     async function sendData() {
-        const roleSelect = document.getElementById('role_id');
-        if (!selectedVolunteer || !roleSelect.value) return;
-
+        const role = document.getElementById('role_id');
         const payload = {
             verst_id: selectedVolunteer.id,
-            role_id: roleSelect.value,
-            role_name: roleSelect.options[roleSelect.selectedIndex].text,
+            role_id: role.value,
+            role_name: role.options[role.selectedIndex].text,
             full_name: selectedVolunteer.full_name
         };
-
-        try {
-            submitBtn.innerText = "Записываем...";
-            submitBtn.disabled = true;
-
-            await fetch(SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: JSON.stringify(payload)
-            });
-            
-            alert("Успешно! Ты в списке.");
-            location.reload();
-        } catch(e) {
-            alert("Ошибка связи с таблицей.");
-            submitBtn.disabled = false;
-        }
+        submitBtn.innerText = "Записываем...";
+        submitBtn.disabled = true;
+        await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+        alert("Записано!");
+        location.reload();
     }
 
     async function loadQueue() {
@@ -201,17 +147,13 @@
             const res = await fetch(SCRIPT_URL);
             const data = await res.json();
             const tbody = document.querySelector('#queue_table tbody');
-            tbody.innerHTML = "";
-            if (Array.isArray(data)) {
-                data.reverse().slice(0, 20).forEach(item => {
-                    let row = tbody.insertRow();
-                    row.insertCell(0).innerHTML = `<span class="role-tag">${item.role_name}</span>`;
-                    row.insertCell(1).innerText = item.full_name;
-                });
-            }
+            data.reverse().forEach(item => {
+                let row = tbody.insertRow();
+                row.insertCell(0).innerHTML = `<span class="role-tag">${item.role_name}</span>`;
+                row.insertCell(1).innerText = item.full_name;
+            });
         } catch(e) {}
     }
-
     loadQueue();
 </script>
 </body>
