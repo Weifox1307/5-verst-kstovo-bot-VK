@@ -102,14 +102,14 @@
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzzE-UcKg9ToKnNFzy5ZkWaySkbWkMuvAcuHMsTuQHR9RvXRKGFf8oOVzhnBsCCmgdhNA/exec';
     const SEARCH_API = 'https://nrms.5verst.ru/api/v1/volunteer/getListByIdPart';
     
-    let selectedVolunteer = null; // Здесь будем хранить данные выбранного человека
+    let selectedVolunteer = null;
 
-    // 1. ЖИВОЙ ПОИСК ЧЕРЕЗ API
     const searchInput = document.getElementById('verst_search');
     const resultsBox = document.getElementById('search_results');
 
+    // Логика поиска
     searchInput.addEventListener('input', async (e) => {
-        const query = e.target.value;
+        const query = e.target.value.trim();
         if (query.length < 3) {
             resultsBox.style.display = 'none';
             return;
@@ -130,42 +130,43 @@
                     const div = document.createElement('div');
                     div.className = 'search-item';
                     div.innerHTML = `<b>${v.first_name} ${v.last_name}</b>
-                                     <span>ID: ${v.id} | Парк: ${v.home_run_name || 'Не указан'}</span>`;
+                                     <span>ID: ${v.id} | Парк: ${v.home_run_name || '—'}</span>`;
                     div.onclick = () => {
                         selectedVolunteer = v;
-                        searchInput.value = `${v.first_name} ${v.last_name} (ID: ${v.id})`;
+                        searchInput.value = `${v.first_name} ${v.last_name} (${v.id})`;
                         resultsBox.style.display = 'none';
+                        searchInput.style.borderColor = "#4bb34b"; // Подсветим зеленым, что выбор сделан
                     };
                     resultsBox.appendChild(div);
                 });
                 resultsBox.style.display = 'block';
-            } else {
-                resultsBox.style.display = 'none';
             }
         } catch (err) {
-            console.error("Ошибка поиска:", err);
+            console.error("Ошибка API поиска");
         }
     });
 
-    // 2. ОТПРАВКА ДАННЫХ В GOOGLE SCRIPT
     async function sendData() {
+        const rawValue = searchInput.value.trim();
         const roleSelect = document.getElementById('role_id');
         const rId = roleSelect.value;
         const rName = roleSelect.options[roleSelect.selectedIndex].text;
 
-        if (!selectedVolunteer) {
-            return alert("Пожалуйста, начните вводить фамилию");
-        }
-        if (!rId) {
-            return alert("Выберите позицию волонтера");
-        }
+        if (!rId) return alert("Выберите позицию!");
+        if (!rawValue) return alert("Введите ID или Фамилию!");
 
+        // Формируем данные: если кликнули по поиску - берем из объекта, 
+        // если ввели руками - пытаемся достать ID из текста или берем весь текст
         const payload = {
-            verst_id: selectedVolunteer.id,
+            verst_id: selectedVolunteer ? selectedVolunteer.id : rawValue.replace(/[^0-9]/g, ''),
             role_id: rId,
             role_name: rName,
-            full_name: `${selectedVolunteer.first_name} ${selectedVolunteer.last_name}`
+            full_name: selectedVolunteer ? `${selectedVolunteer.first_name} ${selectedVolunteer.last_name}` : rawValue
         };
+
+        if (!payload.verst_id) {
+            return alert("Не удалось определить ID. Пожалуйста, выберите волонтера из списка или введите цифровой ID.");
+        }
 
         try {
             await fetch(SCRIPT_URL, {
@@ -173,31 +174,25 @@
                 mode: 'no-cors',
                 body: JSON.stringify(payload)
             });
-            alert("Заявка успешно отправлена!");
+            alert("Заявка отправлена!");
             location.reload();
         } catch(e) {
-            alert("Ошибка при отправке данных");
+            alert("Ошибка сети");
         }
     }
 
-    // 3. ЗАГРУЗКА ТЕКУЩЕЙ ОЧЕРЕДИ
     async function loadQueue() {
         try {
             const res = await fetch(SCRIPT_URL);
             const data = await res.json();
             const tbody = document.querySelector('#queue_table tbody');
             tbody.innerHTML = "";
-            
             data.forEach(item => {
                 let row = tbody.insertRow();
-                // Используем переданное имя роли или ID
-                let displayRole = item.role_name || "Позиция " + item.role_id;
-                row.insertCell(0).innerHTML = `<span class="role-tag">${displayRole}</span>`;
+                row.insertCell(0).innerHTML = `<span class="role-tag">${item.role_name || item.role_id}</span>`;
                 row.insertCell(1).innerText = item.name || item.id;
             });
-        } catch(e) {
-            console.log("Очередь пока пуста или ошибка загрузки");
-        }
+        } catch(e) {}
     }
 
     loadQueue();
