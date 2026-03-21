@@ -1,10 +1,21 @@
-import os, requests, pandas as pd, vk_api, json
+import os, requests, pandas as pd, datetime
+from datetime import timedelta
 
-# Данные из GitHub Secrets
-NRMS_USER = os.getenv("NRMS_USERNAME") # Твой A790217375
+# Настройки из GitHub Secrets
+NRMS_USER = os.getenv("NRMS_USERNAME")
 NRMS_PASS = os.getenv("NRMS_PASSWORD")
-EVENT_ID = 10079 # Парк Станкозавода
-SHEET_URL = os.getenv("SHEET_CSV_URL") # Ссылка на CSV таблицы
+EVENT_ID = 10061 
+SHEET_URL = os.getenv("SHEET_CSV_URL")
+
+def get_next_saturday():
+    """Находит дату ближайшей субботы в формате ДД.ММ.ГГГГ"""
+    now = datetime.datetime.now()
+    # 5 — это суббота (Monday=0, Saturday=5)
+    days_ahead = 5 - now.weekday()
+    if days_ahead < 0: # Если уже воскресенье
+        days_ahead += 7
+    next_sat = now + timedelta(days=days_ahead)
+    return next_sat.strftime("%d.%m.%Y")
 
 def get_nrms_token():
     r = requests.post("https://nrms.5verst.ru/api/v1/auth/login", 
@@ -15,34 +26,38 @@ def sync():
     # 1. Загружаем заявки из таблицы
     try:
         df = pd.read_csv(SHEET_URL)
-        new_volunteers = df[df['status'] == 'new']
-    except: return print("Таблица пуста")
+        # Очищаем пустые строки и берем только статус 'new'
+        new_volunteers = df[df['status'] == 'new'].dropna(subset=['verst_id'])
+    except Exception as e:
+        return print(f"Ошибка чтения таблицы: {e}")
 
     if new_volunteers.empty:
         return print("Новых заявок нет")
 
     token = get_nrms_token()
     headers = {"Authorization": f"Bearer {token}"}
+    current_date = get_next_saturday()
+    print(f"Работаем с датой: {current_date}")
 
-    # 2. Получаем дату ближайшего старта (автоматически)
-    # Для простоты можно захардкодить или вытянуть из /calendar/event/list
-    current_date = "28.03.2026" 
-
-    # 3. Получаем ТЕКУЩИЙ список волонтеров из NRMS, чтобы не затереть существующих
+    # 2. Получаем текущий список из NRMS
     r_current = requests.post("https://nrms.5verst.ru/api/v1/event/volunteer/list", 
                              json={"event_id": EVENT_ID, "event_date": current_date}, headers=headers)
     
-    # Формируем список волонтеров для отправки (старые + новые)
     vol_list = []
-    # Добавляем тех, кто уже в системе
-    for v in r_current.json()['result']['volunteer_list']:
-        vol_list.append({"verst_id": v['verst_id'], "role_id": v['role_id']})
+    # Сохраняем тех, кто уже записан на сайте
+    if 'volunteer_list' in r_current.json().get('result', {}):
+        for v in r_current.json()['result']['volunteer_list']:
+            vol_list.append({"verst_id": v['verst_id'], "role_id": v['role_id']})
     
-    # Добавляем новых из таблицы
+    # 3. Добавляем новых из Google Таблицы
     for _, row in new_volunteers.iterrows():
-        vol_list.append({"verst_id": int(row['verst_id']), "role_id": int(row['role_id'])})
+        vid = int(float(row['verst_id'])) # защита от формата float в CSV
+        rid = int(row['role_id'])
+        # Проверка, чтобы не дублировать
+        if not any(v['verst_id'] == vid and v['role_id'] == rid for v in vol_list):
+            vol_list.append({"verst_id": vid, "role_id": rid})
 
-    # 4. СОХРАНЯЕМ ОБНОВЛЕННЫЙ СПИСОК
+    # 4. Сохраняем всё в NRMS
     payload = {
         "event_id": EVENT_ID,
         "date": current_date,
@@ -54,9 +69,9 @@ def sync():
                        json=payload, headers=headers)
     
     if res.status_code == 200:
-        print(f"Успешно синхронизировано {len(new_volunteers)} новых волонтеров!")
-        # В идеале тут надо пометить строки в Google Таблице как 'done' 
-        # Но для первой версии достаточно, что мы их добавили.
+        print(f"Успешно! В списке теперь {len(vol_list)} волонтеров.")
+    else:
+        print(f"Ошибка сохранения: {res.text}")
 
 if __name__ == "__main__":
     sync()
