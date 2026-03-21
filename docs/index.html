@@ -1,38 +1,67 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Волонтерство Кстово</title>
+    <title>Волонтерство 5 вёрст Кстово</title>
     <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; padding: 15px; background: #f5f5f5; color: #333; }
-        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h2 { color: #2B326D; font-size: 18px; margin-top: 0; margin-bottom: 10px; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; outline: none; }
-        button { width: 100%; padding: 14px; background: #E6564C; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        button:disabled { background: #ccc; }
+        body { font-family: -apple-system, system-ui, Helvetica Neue, Roboto, sans-serif; padding: 15px; background: #f5f5f5; color: #333; margin: 0; }
+        .card { background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        h2 { color: #2B326D; font-size: 18px; margin-top: 0; margin-bottom: 12px; border-bottom: 2px solid #f0f2ff; padding-bottom: 8px; }
+        
+        label { font-size: 12px; color: #666; margin-left: 4px; font-weight: 600; text-transform: uppercase; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0 16px 0; border: 1px solid #dce1e6; border-radius: 8px; box-sizing: border-box; font-size: 15px; outline: none; background-color: #f9fafb; }
+        input:focus, select:focus { border-color: #2B326D; background-color: #fff; }
+        
+        button { width: 100%; padding: 14px; background: #E6564C; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; transition: opacity 0.2s; }
+        button:disabled { background: #b0b0b0; cursor: not-allowed; opacity: 0.7; }
+        
         #search_wrapper { position: relative; }
-        #search_results { background: white; border: 1px solid #ddd; border-radius: 8px; max-height: 250px; overflow-y: auto; display: none; position: absolute; width: 100%; z-index: 1000; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
-        .search-item { padding: 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+        #search_results { 
+            background: white; 
+            border: 1px solid #dce1e6; 
+            border-radius: 8px; 
+            max-height: 280px; 
+            overflow-y: auto; 
+            display: none; 
+            position: absolute; 
+            width: 100%; 
+            z-index: 1000; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+            top: 54px;
+        }
+        
+        .search-item { padding: 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.1s; }
+        .search-item:last-child { border-bottom: none; }
         .search-item:hover { background: #f0f2ff; }
+        .search-item b { display: block; color: #2B326D; font-size: 15px; }
+        .search-item small { color: #666; font-size: 12px; display: block; margin-top: 2px; }
+
         .volunteer-list { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
-        .role-tag { background: #f0f2ff; color: #2B326D; padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-        .loading-spinner { padding: 12px; text-align: center; color: #666; font-size: 13px; }
+        .volunteer-list tr { border-bottom: 1px solid #f0f0f0; }
+        .volunteer-list td { padding: 10px 4px; }
+        .role-tag { background: #f0f2ff; color: #2B326D; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+        .full-name-cell { font-weight: 500; padding-left: 8px !important; }
+
+        .loading-spinner { padding: 20px; text-align: center; color: #666; font-size: 14px; }
     </style>
 </head>
 <body>
 
 <div class="card">
     <h2>Записаться на старт</h2>
+    
+    <label>Кто записывается:</label>
     <div id="search_wrapper">
-        <input type="text" id="verst_search" placeholder="Фамилия или ID..." autocomplete="off">
+        <input type="text" id="verst_search" placeholder="Введите фамилию или ID..." autocomplete="off">
         <div id="search_results"></div>
     </div>
     
-    <select id="role_id">
-        <option value="" disabled selected>Выберите позицию</option>
-        <optgroup label="Основные">
+    <label>Позиция волонтера:</label>
+    <select id="role_id" onchange="validateForm()">
+        <option value="" disabled selected>Выберите роль из списка</option>
+        <optgroup label="Основные позиции">
             <option value="1">Организатор</option>
             <option value="2">Секундомер</option>
             <option value="5">Фотограф</option>
@@ -42,7 +71,7 @@
             <option value="13">Раздача карточек позиций</option>
             <option value="19">Замыкающий</option>
         </optgroup>
-        <optgroup label="Дополнительные">
+        <optgroup label="Дополнительные позиции">
             <option value="3">Сортировка карточек</option>
             <option value="4">Обработка результатов</option>
             <option value="6">Связи с общественностью</option>
@@ -73,35 +102,49 @@
 </div>
 
 <div class="card">
-    <h2>Кто уже в списке</h2>
-    <table class="volunteer-list" id="queue_table"><tbody></tbody></table>
+    <h2>Текущий список (Кстово)</h2>
+    <table class="volunteer-list" id="queue_table">
+        <tbody>
+            <tr><td colspan="2" style="text-align:center; color:#999; padding:20px;">Загрузка списка...</td></tr>
+        </tbody>
+    </table>
 </div>
 
 <script>
     vkBridge.send("VKWebAppInit");
 
-    // ЗАМЕНИ НА СВОЮ АКТУАЛЬНУЮ ССЫЛКУ ПОСЛЕ ОБНОВЛЕНИЯ CODE.GS
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwRJrDu4qsS1ttLu9raJ8V1f6BF0r-uYmu6WAe7EUay-YJl2qIzau4s03E8TYNIffNr2A/exec';
+    // ВАЖНО: Укажи здесь свою ссылку на опубликованный скрипт Google Apps Script
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxsLap8AAYCzp_zqm1rDEgXdkFgA1K5b-g2rfBUE1bimekbpUWdHrJ4vZB6ujEvEpCL9g/exec';
     
     let selectedVolunteer = null;
     const searchInput = document.getElementById('verst_search');
     const resultsBox = document.getElementById('search_results');
     const submitBtn = document.getElementById('submit_btn');
+    const roleSelect = document.getElementById('role_id');
 
+    // Живой поиск
     searchInput.addEventListener('input', (e) => {
         const query = e.target.value.trim();
-        if (query.length < 3) { resultsBox.style.display = 'none'; return; }
+        if (query.length < 3) { 
+            resultsBox.style.display = 'none'; 
+            selectedVolunteer = null;
+            validateForm();
+            return; 
+        }
+        
         clearTimeout(window.searchTimeout);
-        window.searchTimeout = setTimeout(() => fetchVolunteers(query), 600);
+        window.searchTimeout = setTimeout(() => fetchVolunteers(query), 500);
     });
 
     async function fetchVolunteers(query) {
-        resultsBox.innerHTML = '<div class="loading-spinner">Ищем в базе...</div>';
+        resultsBox.innerHTML = '<div class="loading-spinner">Поиск в базе NRMS...</div>';
         resultsBox.style.display = 'block';
 
         try {
             const response = await fetch(`${SCRIPT_URL}?search=${encodeURIComponent(query)}`);
             const resData = await response.json();
+            
+            // Данные от NRMS приходят в result.data
             const list = resData.result?.data || [];
 
             resultsBox.innerHTML = '';
@@ -109,52 +152,96 @@
                 list.forEach(v => {
                     const div = document.createElement('div');
                     div.className = 'search-item';
-                    div.innerHTML = `<b>${v.full_name}</b><small>ID: ${v.id}</small>`;
+                    // Показываем Имя, ID и Домашний парк
+                    div.innerHTML = `
+                        <b>${v.full_name}</b>
+                        <small>ID: ${v.id} • Парк: ${v.home_event || 'не указан'}</small>
+                    `;
                     div.onclick = () => {
                         selectedVolunteer = v;
                         searchInput.value = v.full_name;
                         resultsBox.style.display = 'none';
-                        submitBtn.disabled = false;
-                        submitBtn.innerText = "Записаться";
+                        validateForm();
                     };
                     resultsBox.appendChild(div);
                 });
             } else {
-                resultsBox.innerHTML = '<div class="loading-spinner">Никто не найден.</div>';
+                resultsBox.innerHTML = '<div class="loading-spinner">Ничего не найдено</div>';
             }
         } catch (e) {
-            resultsBox.innerHTML = '<div class="loading-spinner">Ошибка поиска.</div>';
+            resultsBox.innerHTML = '<div class="loading-spinner" style="color:red;">Ошибка связи с базой</div>';
+        }
+    }
+
+    function validateForm() {
+        if (selectedVolunteer && roleSelect.value) {
+            submitBtn.disabled = false;
+            submitBtn.innerText = "Записаться волонтером";
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.innerText = selectedVolunteer ? "Выберите позицию" : "Выберите человека";
         }
     }
 
     async function sendData() {
-        const role = document.getElementById('role_id');
+        if (!selectedVolunteer || !roleSelect.value) return;
+
         const payload = {
             verst_id: selectedVolunteer.id,
-            role_id: role.value,
-            role_name: role.options[role.selectedIndex].text,
+            role_id: roleSelect.value,
+            role_name: roleSelect.options[roleSelect.selectedIndex].text,
             full_name: selectedVolunteer.full_name
         };
+
         submitBtn.innerText = "Записываем...";
         submitBtn.disabled = true;
-        await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-        alert("Записано!");
-        location.reload();
+
+        try {
+            // mode: 'no-cors' используется для отправки в Google Script без проблем с CORS
+            await fetch(SCRIPT_URL, { 
+                method: 'POST', 
+                mode: 'no-cors', 
+                body: JSON.stringify(payload),
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            alert("Заявка принята! Данные попадут на сайт 5 вёрст в течение получаса.");
+            location.reload(); // Перезагружаем для обновления списка
+        } catch (e) {
+            alert("Произошла ошибка при отправке данных.");
+            submitBtn.disabled = false;
+            submitBtn.innerText = "Попробовать снова";
+        }
     }
 
+    // Загрузка списка уже записанных из таблицы
     async function loadQueue() {
+        const tbody = document.querySelector('#queue_table tbody');
         try {
             const res = await fetch(SCRIPT_URL);
             const data = await res.json();
-            const tbody = document.querySelector('#queue_table tbody');
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:#999; padding:20px;">Пока никто не записался</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            // Переворачиваем, чтобы последние записи были сверху
             data.reverse().forEach(item => {
                 let row = tbody.insertRow();
                 row.insertCell(0).innerHTML = `<span class="role-tag">${item.role_name}</span>`;
-                row.insertCell(1).innerText = item.full_name;
+                let nameCell = row.insertCell(1);
+                nameCell.className = 'full-name-cell';
+                nameCell.innerText = item.full_name;
             });
-        } catch(e) {}
+        } catch(e) {
+            tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:red; padding:20px;">Не удалось загрузить список</td></tr>';
+        }
     }
+
     loadQueue();
 </script>
+
 </body>
 </html>
