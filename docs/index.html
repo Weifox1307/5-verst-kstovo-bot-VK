@@ -6,57 +6,81 @@
     <title>Волонтерство Кстово</title>
     <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; padding: 15px; background: #f5f5f5; }
+        body { font-family: -apple-system, system-ui, sans-serif; padding: 15px; background: #f5f5f5; color: #333; }
         .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h2 { color: #2B326D; font-size: 18px; margin-top: 0; }
-        input, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #E6564C; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .volunteer-list { width: 100%; border-collapse: collapse; font-size: 14px; }
-        .volunteer-list th { text-align: left; color: #888; padding: 8px; }
-        .volunteer-list td { padding: 8px; border-top: 1px solid #eee; }
+        h2 { color: #2B326D; font-size: 18px; margin-top: 0; margin-bottom: 10px; }
+        
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        button { width: 100%; padding: 14px; background: #E6564C; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        
+        /* Стили для выпадающего списка поиска */
+        #search_results { 
+            background: white; 
+            border: 1px solid #eee; 
+            border-radius: 8px; 
+            max-height: 200px; 
+            overflow-y: auto; 
+            display: none; 
+            margin-top: -5px;
+            position: relative;
+            z-index: 100;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .search-item { padding: 10px; border-bottom: 1px solid #f9f9f9; cursor: pointer; font-size: 13px; }
+        .search-item:hover { background: #f0f2ff; }
+        .search-item b { color: #2B326D; display: block; }
+        .search-item span { color: #666; font-size: 11px; }
+
+        .volunteer-list { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
+        .volunteer-list th { text-align: left; color: #888; padding: 8px; font-weight: normal; border-bottom: 2px solid #eee; }
+        .volunteer-list td { padding: 10px 8px; border-bottom: 1px solid #eee; }
+        .role-tag { background: #f0f2ff; color: #2B326D; padding: 3px 6px; border-radius: 4px; font-size: 12px; font-weight: 600; }
     </style>
 </head>
 <body>
 
 <div class="card">
     <h2>Записаться на старт</h2>
-    <input type="text" id="verst_id" placeholder="Введите ваш ID (например, 790217375)">
+    <input type="text" id="verst_search" placeholder="Введите Фамилию, Имя или ID..." autocomplete="off">
+    <div id="search_results"></div>
     
     <select id="role_id">
-        <option value="" disabled>--- Основные позиции ---</option>
-        <option value="1">Организатор</option>
-        <option value="2">Секундомер</option>
-        <option value="5">Фотограф</option>
-        <option value="7">Маршал</option>
-        <option value="8">Подготовка мероприятия</option>
-        <option value="11">Сканирование штрих-кодов</option>
-        <option value="13">Раздача карточек позиций</option>
-        <option value="19">Замыкающий</option>
-        
-        <option value="" disabled>--- Дополнительные позиции ---</option>
-        <option value="3">Сортировка карточек</option>
-        <option value="4">Обработка результатов</option>
-        <option value="6">Связи с общественностью</option>
-        <option value="9">Хранение и доставка оборудования</option>
-        <option value="10">Разное</option>
-        <option value="12">Завершение мероприятия</option>
-        <option value="14">Проверка карточек позиций</option>
-        <option value="15">Инструктаж новых участников</option>
-        <option value="16">Организация финиша</option>
-        <option value="17">Ведущий велосипед</option>
-        <option value="18">Помощь в раздаче карточек позиций</option>
-        <option value="20">Координация волонтёров</option>
-        <option value="23">Составление отчёта</option>
-        <option value="28">Пейсмейкер</option>
-        <option value="30">Лидер для слабовидящих</option>
-        <option value="31">Проведение разминки</option>
-        <option value="32">Сурдопереводчик</option>
-        <option value="33">Координатор парковки</option>
-        <option value="34">Проверка трассы</option>
-        <option value="35">Разметка трассы</option>
-        <option value="36">Ведущий мероприятия</option>
-        <option value="37">Проведение предстартового брифинга</option>
-        <option value="38">Видеограф</option>
+        <option value="" disabled selected>Выберите позицию</option>
+        <optgroup label="Основные (шаблон)">
+            <option value="1">Организатор</option>
+            <option value="2">Секундомер</option>
+            <option value="5">Фотограф</option>
+            <option value="7">Маршал</option>
+            <option value="8">Подготовка мероприятия</option>
+            <option value="11">Сканирование штрих-кодов</option>
+            <option value="13">Раздача карточек позиций</option>
+            <option value="19">Замыкающий</option>
+        </optgroup>
+        <optgroup label="Все позиции">
+            <option value="3">Сортировка карточек</option>
+            <option value="4">Обработка результатов</option>
+            <option value="6">Связи с общественностью</option>
+            <option value="9">Хранение и доставка оборудования</option>
+            <option value="10">Разное</option>
+            <option value="12">Завершение мероприятия</option>
+            <option value="14">Проверка карточек позиций</option>
+            <option value="15">Инструктаж новых участников</option>
+            <option value="16">Организация финиша</option>
+            <option value="17">Ведущий велосипед</option>
+            <option value="18">Помощь в раздаче карточек позиций</option>
+            <option value="20">Координация волонтёров</option>
+            <option value="23">Составление отчёта</option>
+            <option value="28">Пейсмейкер</option>
+            <option value="30">Лидер для слабовидящих</option>
+            <option value="31">Проведение разминки</option>
+            <option value="32">Сурдопереводчик</option>
+            <option value="33">Координатор парковки</option>
+            <option value="34">Проверка трассы</option>
+            <option value="35">Разметка трассы</option>
+            <option value="36">Ведущий мероприятия</option>
+            <option value="37">Проведение предстартового брифинга</option>
+            <option value="38">Видеограф</option>
+        </optgroup>
     </select>
     
     <button onclick="sendData()">Записаться</button>
@@ -68,74 +92,111 @@
         <thead>
             <tr><th>Позиция</th><th>Волонтер</th></tr>
         </thead>
-        <tbody>
-            </tbody>
+        <tbody></tbody>
     </table>
 </div>
 
 <script>
     vkBridge.send("VKWebAppInit");
 
-    // Словарь ролей для красивого отображения в таблице
-    const roleNames = {
-        1: "Организатор", 2: "Секундомер", 3: "Сортировка карточек", 4: "Обработка результатов",
-        5: "Фотограф", 6: "Связи с общественностью", 7: "Маршал", 8: "Подготовка мероприятия",
-        9: "Хранение и доставка оборудования", 10: "Разное", 11: "Сканирование штрих-кодов",
-        12: "Завершение мероприятия", 13: "Раздача карточек позиций", 14: "Проверка карточек позиций",
-        15: "Инструктаж новых участников", 16: "Организация финиша", 17: "Ведущий велосипед",
-        18: "Помощь в раздаче карточек позиций", 19: "Замыкающий", 20: "Координация волонтёров",
-        23: "Составление отчёта", 28: "Пейсмейкер", 30: "Лидер для слабовидящих",
-        31: "Проведение разминки", 32: "Сурдопереводчик", 33: "Координатор парковки",
-        34: "Проверка трассы", 35: "Разметка трассы", 36: "Ведущий мероприятия",
-        37: "Проведение предстартового брифинга", 38: "Видеограф"
-    };
-
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzzE-UcKg9ToKnNFzy5ZkWaySkbWkMuvAcuHMsTuQHR9RvXRKGFf8oOVzhnBsCCmgdhNA/exec';
+    const SEARCH_API = 'https://nrms.5verst.ru/api/v1/volunteer/getListByIdPart';
+    
+    let selectedVolunteer = null; // Здесь будем хранить данные выбранного человека
 
+    // 1. ЖИВОЙ ПОИСК ЧЕРЕЗ API
+    const searchInput = document.getElementById('verst_search');
+    const resultsBox = document.getElementById('search_results');
+
+    searchInput.addEventListener('input', async (e) => {
+        const query = e.target.value;
+        if (query.length < 3) {
+            resultsBox.style.display = 'none';
+            return;
+        }
+
+        try {
+            const response = await fetch(SEARCH_API, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ "search": query })
+            });
+            const data = await response.json();
+            const volunteers = data.result.volunteers;
+
+            resultsBox.innerHTML = '';
+            if (volunteers && volunteers.length > 0) {
+                volunteers.forEach(v => {
+                    const div = document.createElement('div');
+                    div.className = 'search-item';
+                    div.innerHTML = `<b>${v.first_name} ${v.last_name}</b>
+                                     <span>ID: ${v.id} | Парк: ${v.home_run_name || 'Не указан'}</span>`;
+                    div.onclick = () => {
+                        selectedVolunteer = v;
+                        searchInput.value = `${v.first_name} ${v.last_name} (ID: ${v.id})`;
+                        resultsBox.style.display = 'none';
+                    };
+                    resultsBox.appendChild(div);
+                });
+                resultsBox.style.display = 'block';
+            } else {
+                resultsBox.style.display = 'none';
+            }
+        } catch (err) {
+            console.error("Ошибка поиска:", err);
+        }
+    });
+
+    // 2. ОТПРАВКА ДАННЫХ В GOOGLE SCRIPT
+    async function sendData() {
+        const roleSelect = document.getElementById('role_id');
+        const rId = roleSelect.value;
+        const rName = roleSelect.options[roleSelect.selectedIndex].text;
+
+        if (!selectedVolunteer) {
+            return alert("Пожалуйста, начните вводить фамилию");
+        }
+        if (!rId) {
+            return alert("Выберите позицию волонтера");
+        }
+
+        const payload = {
+            verst_id: selectedVolunteer.id,
+            role_id: rId,
+            role_name: rName,
+            full_name: `${selectedVolunteer.first_name} ${selectedVolunteer.last_name}`
+        };
+
+        try {
+            await fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(payload)
+            });
+            alert("Заявка успешно отправлена!");
+            location.reload();
+        } catch(e) {
+            alert("Ошибка при отправке данных");
+        }
+    }
+
+    // 3. ЗАГРУЗКА ТЕКУЩЕЙ ОЧЕРЕДИ
     async function loadQueue() {
         try {
             const res = await fetch(SCRIPT_URL);
             const data = await res.json();
-            const tableBody = document.querySelector('#queue_table tbody');
-            tableBody.innerHTML = ""; // Очистка перед обновлением
+            const tbody = document.querySelector('#queue_table tbody');
+            tbody.innerHTML = "";
             
             data.forEach(item => {
-                let row = tableBody.insertRow();
-                let roleName = roleNames[item.role_id] || "Позиция " + item.role_id;
-                row.insertCell(0).innerText = roleName;
+                let row = tbody.insertRow();
+                // Используем переданное имя роли или ID
+                let displayRole = item.role_name || "Позиция " + item.role_id;
+                row.insertCell(0).innerHTML = `<span class="role-tag">${displayRole}</span>`;
                 row.insertCell(1).innerText = item.name || item.id;
             });
         } catch(e) {
-            console.log("Ошибка загрузки очереди");
-        }
-    }
-
-    async function sendData() {
-        const vIdInput = document.getElementById('verst_id').value;
-        const rId = document.getElementById('role_id').value;
-
-        // Убираем букву А, если пользователь ее ввел
-        const vId = vIdInput.replace(/[^0-9]/g, '');
-
-        if(!vId) return alert("Введите ваш ID!");
-        if(!rId) return alert("Выберите позицию!");
-
-        const payload = {
-            verst_id: vId,
-            role_id: rId,
-            full_name: "Заявка из ВК" 
-        };
-
-        try {
-            const response = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors', // Важно для Google Scripts
-                body: JSON.stringify(payload)
-            });
-            alert("Заявка отправлена! Бот обновит NRMS в ближайшее время.");
-            location.reload();
-        } catch(e) {
-            alert("Ошибка при отправке данных");
+            console.log("Очередь пока пуста или ошибка загрузки");
         }
     }
 
