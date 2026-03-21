@@ -15,7 +15,6 @@
         button { width: 100%; padding: 14px; background: #E6564C; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
         button:disabled { background: #ccc; cursor: not-allowed; }
 
-        /* Живой поиск */
         #search_wrapper { position: relative; }
         #search_results { 
             background: white; border: 1px solid #ddd; border-radius: 8px; 
@@ -96,9 +95,8 @@
 <script>
     vkBridge.send("VKWebAppInit");
 
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwYy9KJTwR5m2KVdGO9KLSl4Pf0n2-JAWUX8-E_14eBu0mrbwHiW4FIVZuMqHkO1jErzQ/exec';
-    const API_BY_ID = 'https://nrms.5verst.ru/api/v1/athlete/getListByIdPart';
-    const API_BY_NAME = 'https://nrms.5verst.ru/api/v1/athlete/getListByNamePart';
+    // ЗАМЕНИ НА СВОЙ URL ПОСЛЕ ПЕРЕДЕПЛОЯ
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbweQBGtLhjZCud6sJWqXN57nkJ69FlH3vxgavacZFsUnT1njLTpbwneffmGwAQmB2BAeQ/exec';
     
     let selectedVolunteer = null;
     const searchInput = document.getElementById('verst_search');
@@ -111,7 +109,6 @@
         clearTimeout(debounceTimer);
         const query = e.target.value.trim();
         
-        // Сбрасываем выбор, если пользователь начал менять текст
         selectedVolunteer = null;
         submitBtn.disabled = true;
         submitBtn.innerText = "Выберите человека из списка";
@@ -124,26 +121,16 @@
 
         debounceTimer = setTimeout(() => {
             fetchVolunteers(query);
-        }, 400); // Задержка, чтобы не спамить API при каждой букве
+        }, 500);
     });
 
     async function fetchVolunteers(query) {
-        resultsBox.innerHTML = '<div class="loading-spinner">Поиск...</div>';
+        resultsBox.innerHTML = '<div class="loading-spinner">Ищем в базе 5 вёрст...</div>';
         resultsBox.style.display = 'block';
 
-        const cleanQuery = query.replace(/^A/i, '');
-        const isIdSearch = /^\d+$/.test(cleanQuery);
-        const api_url = isIdSearch ? API_BY_ID : API_BY_NAME;
-        const payload = isIdSearch 
-            ? { "id": cleanQuery } 
-            : { "name": query, "event_id": 10079, "registered_only": false };
-
         try {
-            const response = await fetch(api_url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+            // Теперь стучимся в свой Apps Script через GET запрос с параметром search
+            const response = await fetch(`${SCRIPT_URL}?search=${encodeURIComponent(query)}`);
             const resData = await response.json();
             const volunteers = resData.result.data || [];
 
@@ -168,11 +155,10 @@
                 resultsBox.innerHTML = '<div class="loading-spinner">Никто не найден</div>';
             }
         } catch (err) {
-            resultsBox.innerHTML = '<div class="loading-spinner">Ошибка поиска. Попробуйте снова.</div>';
+            resultsBox.innerHTML = '<div class="loading-spinner">Ошибка поиска через сервер</div>';
         }
     }
 
-    // Закрытие списка при клике вне
     document.addEventListener('click', (e) => {
         if (!document.getElementById('search_wrapper').contains(e.target)) {
             resultsBox.style.display = 'none';
@@ -181,8 +167,7 @@
 
     async function sendData() {
         const roleSelect = document.getElementById('role_id');
-        
-        if (!selectedVolunteer) return alert("Пожалуйста, выберите участника из выпадающего списка!");
+        if (!selectedVolunteer) return alert("Выберите волонтера!");
         if (!roleSelect.value) return alert("Выберите роль!");
 
         const payload = {
@@ -193,7 +178,7 @@
         };
 
         try {
-            submitBtn.innerText = "Отправка...";
+            submitBtn.innerText = "Записываем...";
             submitBtn.disabled = true;
 
             await fetch(SCRIPT_URL, {
@@ -202,11 +187,10 @@
                 body: JSON.stringify(payload)
             });
             
-            alert("Вы успешно записаны!");
+            alert("Готово! Ты в списке.");
             location.reload();
         } catch(e) {
-            alert("Ошибка связи. Проверьте интернет.");
-            submitBtn.innerText = "Записаться";
+            alert("Ошибка отправки");
             submitBtn.disabled = false;
         }
     }
@@ -217,7 +201,8 @@
             const data = await res.json();
             const tbody = document.querySelector('#queue_table tbody');
             tbody.innerHTML = "";
-            data.reverse().slice(0, 10).forEach(item => {
+            // Показываем последние 15 записей
+            data.reverse().slice(0, 15).forEach(item => {
                 let row = tbody.insertRow();
                 row.insertCell(0).innerHTML = `<span class="role-tag">${item.role_name}</span>`;
                 row.insertCell(1).innerText = item.full_name;
