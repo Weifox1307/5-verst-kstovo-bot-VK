@@ -1,0 +1,28 @@
+name: Saturday Weather Report
+
+on:
+  schedule:
+    # Запуск каждую субботу в 04:00 UTC (07:00 по МСК)
+    # Формат: Minute Hour Day Month DayOfWeek
+    - cron: '0 4 * * 6'
+  workflow_dispatch: # Позволяет запустить вручную для теста
+
+jobs:
+  send_report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run weather bot
+        env:
+          VK_TOKEN: ${{ secrets.VK_TOKEN }}
+        run: python bot.py
