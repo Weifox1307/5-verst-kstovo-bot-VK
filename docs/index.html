@@ -6,160 +6,165 @@
     <title>Волонтерство 5 вёрст Кстово</title>
     <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
     <style>
-        body { font-family: -apple-system, system-ui, Helvetica Neue, Roboto, sans-serif; padding: 15px; background: #f5f5f5; color: #333; margin: 0; }
-        .card { background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        body { font-family: -apple-system, system-ui, Helvetica Neue, Roboto, sans-serif; padding: 0; background: #f5f5f5; color: #333; margin: 0; padding-bottom: 20px; }
+        
+        /* Вкладки */
+        .tabs { display: flex; background: #2B326D; position: sticky; top: 0; z-index: 1000; padding: 5px; gap: 5px; }
+        .tab { flex: 1; text-align: center; padding: 12px; font-weight: bold; color: #fff; opacity: 0.6; cursor: pointer; border-radius: 8px; font-size: 14px; transition: 0.2s; }
+        .tab.active { opacity: 1; background: rgba(255,255,255,0.15); }
+
+        .card { background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin: 15px; }
         h2 { color: #2B326D; font-size: 18px; margin-top: 0; margin-bottom: 12px; border-bottom: 2px solid #f0f2ff; padding-bottom: 8px; }
         .date-badge { color: #E6564C; font-weight: bold; }
+        .welcome-msg { background: #f0f2ff; padding: 12px; border-radius: 10px; font-size: 13px; margin-bottom: 15px; color: #2B326D; display: none; border: 1px solid #dce1e6; }
         
-        /* Сообщение об автозаполнении */
-        .welcome-msg { 
-            background: #f0f2ff; 
-            padding: 12px; 
-            border-radius: 10px; 
-            font-size: 13px; 
-            margin-bottom: 15px; 
-            color: #2B326D; 
-            display: none; 
-            border: 1px solid #dce1e6;
-            line-height: 1.4;
-        }
+        label { font-size: 11px; color: #999; margin-left: 4px; font-weight: 600; text-transform: uppercase; }
+        input, select { width: 100%; padding: 12px; margin: 5px 0 15px 0; border: 1px solid #dce1e6; border-radius: 8px; box-sizing: border-box; font-size: 15px; outline: none; background: #f9fafb; }
+        button { width: 100%; padding: 14px; background: #E6564C; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        button:disabled { background: #b0b0b0; }
 
-        label { font-size: 12px; color: #666; margin-left: 4px; font-weight: 600; text-transform: uppercase; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0 16px 0; border: 1px solid #dce1e6; border-radius: 8px; box-sizing: border-box; font-size: 15px; outline: none; background-color: #f9fafb; }
-        input:focus, select:focus { border-color: #2B326D; background-color: #fff; }
-        
-        button { width: 100%; padding: 14px; background: #E6564C; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; transition: opacity 0.2s; }
-        button:disabled { background: #b0b0b0; cursor: not-allowed; opacity: 0.7; }
-        
+        /* Поиск */
         #search_wrapper { position: relative; }
-        #search_results { 
-            background: white; 
-            border: 1px solid #dce1e6; 
-            border-radius: 8px; 
-            max-height: 280px; 
-            overflow-y: auto; 
-            display: none; 
-            position: absolute; 
-            width: 100%; 
-            z-index: 1000; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
-            top: 54px;
-        }
+        #search_results { background: white; border: 1px solid #dce1e6; border-radius: 8px; max-height: 250px; overflow-y: auto; display: none; position: absolute; width: 100%; z-index: 1000; box-shadow: 0 10px 25px rgba(0,0,0,0.1); top: 52px; }
+        .search-item { padding: 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+        .search-item b { color: #2B326D; font-size: 15px; }
+
+        /* Рейтинг */
+        .rating-item { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+        .rank { width: 30px; font-weight: 900; color: #2B326D; font-size: 16px; }
+        .user-info { flex: 1; padding-left: 5px; }
+        .user-name { font-weight: 700; font-size: 15px; color: #2B326D; display: block; }
+        .stats-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
         
-        .search-item { padding: 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.1s; }
-        .search-item b { display: block; color: #2B326D; font-size: 15px; }
-        .search-item small { color: #666; font-size: 12px; display: block; margin-top: 2px; }
+        /* Клубы Финишеров */
+        .run-10 { background: #fecc3f; color: #333; }
+        .run-25 { background: #f29104; color: #fff; }
+        .run-50 { background: #e6464c; color: #fff; }
+        .run-100 { background: #8c1f28; color: #fff; }
+        
+        /* Клубы Волонтеров */
+        .vol-10 { background: #c9b4d8; color: #333; }
+        .vol-25 { background: #9d82aa; color: #fff; }
+        .vol-50 { background: #6c5391; color: #fff; }
+        .vol-100 { background: #422d58; color: #fff; }
+
+        .badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 800; text-transform: uppercase; white-space: nowrap; }
 
         .volunteer-list { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
-        .volunteer-list tr { border-bottom: 1px solid #f0f0f0; }
-        .volunteer-list td { padding: 10px 4px; }
-        .role-tag { background: #f0f2ff; color: #2B326D; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; white-space: nowrap; }
-        .full-name-cell { font-weight: 500; padding-left: 8px !important; }
-
-        .loading-spinner { padding: 20px; text-align: center; color: #666; font-size: 14px; }
+        .role-tag { background: #f0f2ff; color: #2B326D; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+        .full-name-cell { padding-left: 10px !important; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>Записаться на <span id="event_date" class="date-badge">...</span></h2>
-    
-    <!-- Плашка автозаполнения -->
-    <div id="welcome_back" class="welcome-msg"></div>
-
-    <label>Кто записывается:</label>
-    <div id="search_wrapper">
-        <input type="text" id="verst_search" placeholder="Введите фамилию или ID..." autocomplete="off">
-        <div id="search_results"></div>
-    </div>
-    
-    <label>Позиция волонтера:</label>
-    <select id="role_id" onchange="validateForm()">
-        <option value="" disabled selected>Выберите роль из списка</option>
-        <optgroup label="Основные позиции">
-            <option value="1">Организатор</option>
-            <option value="2">Секундомер</option>
-            <option value="5">Фотограф</option>
-            <option value="7">Маршал</option>
-            <option value="8">Подготовка мероприятия</option>
-            <option value="11">Сканирование штрих-кодов</option>
-            <option value="13">Раздача карточек позиций</option>
-            <option value="19">Замыкающий</option>
-        </optgroup>
-        <optgroup label="Дополнительные позиции">
-            <option value="3">Сортировка карточек</option>
-            <option value="4">Обработка результатов</option>
-            <option value="6">Связи с общественностью</option>
-            <option value="9">Хранение и доставка оборудования</option>
-            <option value="10">Разное</option>
-            <option value="12">Завершение мероприятия</option>
-            <option value="14">Проверка карточек позиций</option>
-            <option value="15">Инструктаж новых участников</option>
-            <option value="16">Организация финиша</option>
-            <option value="17">Ведущий велосипед</option>
-            <option value="18">Помощь в раздаче карточек позиций</option>
-            <option value="20">Координация волонтёров</option>
-            <option value="23">Составление отчёта</option>
-            <option value="28">Пейсмейкер</option>
-            <option value="30">Лидер для слабовидящих</option>
-            <option value="31">Проведение разминки</option>
-            <option value="32">Сурдопереводчик</option>
-            <option value="33">Координатор парковки</option>
-            <option value="34">Проверка трассы</option>
-            <option value="35">Разметка трассы</option>
-            <option value="36">Ведущий мероприятия</option>
-            <option value="37">Проведение предстартового брифинга</option>
-            <option value="38">Видеограф</option>
-        </optgroup>
-    </select>
-    
-    <button id="submit_btn" onclick="sendData()" disabled>Выберите человека</button>
+<div class="tabs">
+    <div id="tab_rec" class="tab active" onclick="switchTab('rec')">ЗАПИСЬ</div>
+    <div id="tab_rate" class="tab" onclick="switchTab('rate')">РЕЙТИНГ</div>
 </div>
 
-<div class="card">
-    <h2>Текущий список (Кстово)</h2>
-    <table class="volunteer-list" id="queue_table">
-        <tbody>
-            <tr><td colspan="2" style="text-align:center; color:#999; padding:20px;">Загрузка списка...</td></tr>
-        </tbody>
-    </table>
+<!-- СЕКЦИЯ ЗАПИСИ -->
+<div id="section_rec">
+    <div class="card">
+        <h2>Записаться на <span id="event_date" class="date-badge">...</span></h2>
+        <div id="welcome_back" class="welcome-msg"></div>
+        <label>Кто записывается:</label>
+        <div id="search_wrapper">
+            <input type="text" id="verst_search" placeholder="Введите фамилию или ID..." autocomplete="off">
+            <div id="search_results"></div>
+        </div>
+        <label>Позиция волонтера:</label>
+        <select id="role_id" onchange="validateForm()">
+            <option value="" disabled selected>Выберите роль из списка</option>
+            <optgroup label="Основные позиции">
+                <option value="1">Организатор</option>
+                <option value="2">Секундомер</option>
+                <option value="5">Фотограф</option>
+                <option value="7">Маршал</option>
+                <option value="8">Подготовка мероприятия</option>
+                <option value="11">Сканирование штрих-кодов</option>
+                <option value="13">Раздача карточек позиций</option>
+                <option value="19">Замыкающий</option>
+            </optgroup>
+            <optgroup label="Дополнительные позиции">
+                <option value="3">Сортировка карточек</option>
+                <option value="4">Обработка результатов</option>
+                <option value="6">Связи с общественностью</option>
+                <option value="9">Хранение и доставка оборудования</option>
+                <option value="10">Разное</option>
+                <option value="12">Завершение мероприятия</option>
+                <option value="14">Проверка карточек позиций</option>
+                <option value="15">Инструктаж новых участников</option>
+                <option value="16">Организация финиша</option>
+                <option value="17">Ведущий велосипед</option>
+                <option value="18">Помощь в раздаче карточек позиций</option>
+                <option value="20">Координация волонтёров</option>
+                <option value="23">Составление отчёта</option>
+                <option value="28">Пейсмейкер</option>
+                <option value="30">Лидер для слабовидящих</option>
+                <option value="31">Проведение разминки</option>
+                <option value="32">Сурдопереводчик</option>
+                <option value="33">Координатор парковки</option>
+                <option value="34">Проверка трассы</option>
+                <option value="35">Разметка трассы</option>
+                <option value="36">Ведущий мероприятия</option>
+                <option value="37">Проведение предстартового брифинга</option>
+                <option value="38">Видеограф</option>
+            </optgroup>
+        </select>
+        <button id="submit_btn" onclick="sendData()" disabled>Выберите человека</button>
+    </div>
+    <div class="card">
+        <h2>В списке на субботу</h2>
+        <table class="volunteer-list" id="queue_table"><tbody></tbody></table>
+    </div>
+</div>
+
+<!-- СЕКЦИЯ РЕЙТИНГА -->
+<div id="section_rate" style="display:none">
+    <div class="card">
+        <h2>Топ участников Кстово</h2>
+        <div id="rating_list">Загрузка рейтинга...</div>
+    </div>
 </div>
 
 <script>
     vkBridge.send("VKWebAppInit");
-
-    // Ссылка на твой скрипт
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHPAHWG80NPk77tC0PNXvs4kKsRoqKQ2aAFcQElbmu1fqLNcLaPgHVrFEjujwndu2sqg/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxADL0niRlwXUKcu5CIq9UtZRsWYIfn20AIKk8z7Ub2W80ia9F2wNBCEJO0GeXnwc47/exec';
     
     let selectedVolunteer = null;
     let vkUser = null;
 
-    // Инициализация: получаем данные ВК, дату и проверяем автозаполнение
+    function switchTab(t) {
+        document.getElementById('section_rec').style.display = t === 'rec' ? 'block' : 'none';
+        document.getElementById('section_rate').style.display = t === 'rate' ? 'block' : 'none';
+        document.getElementById('tab_rec').classList.toggle('active', t === 'rec');
+        document.getElementById('tab_rate').classList.toggle('active', t === 'rate');
+        if (t === 'rate') loadRating();
+    }
+
     async function init() {
         try {
-            // 1. Получаем инфо из ВК
             vkUser = await vkBridge.send("VKWebAppGetUserInfo");
+            const res = await fetch(`${SCRIPT_URL}?check_vk_id=${vkUser.id}`);
+            const data = await res.json();
             
-            // 2. Проверяем в таблице, был ли этот VK ID раньше
-            const checkRes = await fetch(`${SCRIPT_URL}?check_vk_id=${vkUser.id}`);
-            const checkData = await checkRes.json();
-            
-            if (checkData.found) {
-                selectedVolunteer = { id: checkData.verst_id, full_name: checkData.full_name };
-                document.getElementById('verst_search').value = checkData.full_name;
+            if (data.found) {
+                selectedVolunteer = { id: data.verst_id, full_name: data.full_name };
+                document.getElementById('verst_search').value = data.full_name;
                 const welcome = document.getElementById('welcome_back');
                 welcome.style.display = 'block';
-                welcome.innerHTML = `👋 <b>${vkUser.first_name}</b>, твои данные (ID ${checkData.verst_id}) подставлены автоматически!`;
+                let welcomeText = `👋 <b>${vkUser.first_name}</b>, твои данные подставлены!`;
+                if (data.stats) {
+                    welcomeText += `<br><small>Твои результаты: 🏃 ${data.stats.runs} | 🧡 ${data.stats.vols}</small>`;
+                }
+                welcome.innerHTML = welcomeText;
                 validateForm();
             }
 
-            // 3. Получаем дату субботы
-            const res = await fetch(SCRIPT_URL + "?get_date=1");
-            const data = await res.json();
-            document.getElementById('event_date').innerText = data.date;
-        } catch (e) { 
-            console.error("Ошибка инициализации", e); 
-        }
+            const dRes = await fetch(SCRIPT_URL + "?get_date=1");
+            const dData = await dRes.json();
+            document.getElementById('event_date').innerText = dData.date;
+        } catch (e) { console.error(e); }
     }
     init();
 
@@ -168,110 +173,111 @@
     const submitBtn = document.getElementById('submit_btn');
     const roleSelect = document.getElementById('role_id');
 
-    // Живой поиск
     searchInput.addEventListener('input', (e) => {
         const query = e.target.value.trim();
-        if (query.length < 3) { 
-            resultsBox.style.display = 'none'; 
-            selectedVolunteer = null;
-            validateForm();
-            return; 
-        }
+        if (query.length < 3) { resultsBox.style.display = 'none'; selectedVolunteer = null; validateForm(); return; }
         clearTimeout(window.searchTimeout);
         window.searchTimeout = setTimeout(() => fetchVolunteers(query), 500);
     });
 
     async function fetchVolunteers(query) {
-        resultsBox.innerHTML = '<div class="loading-spinner">Поиск в базе NRMS...</div>';
+        resultsBox.innerHTML = '<div style="padding:15px">Поиск...</div>';
         resultsBox.style.display = 'block';
         try {
-            const response = await fetch(`${SCRIPT_URL}?search=${encodeURIComponent(query)}`);
-            const resData = await response.json();
-            const list = resData.result?.data || [];
+            const res = await fetch(`${SCRIPT_URL}?search=${encodeURIComponent(query)}`);
+            const data = await res.json();
             resultsBox.innerHTML = '';
-            if (list.length > 0) {
-                list.forEach(v => {
-                    const div = document.createElement('div');
-                    div.className = 'search-item';
-                    div.innerHTML = `<b>${v.full_name}</b><small>ID: ${v.id} • ${v.home_event || ''}</small>`;
-                    div.onclick = () => {
-                        selectedVolunteer = v;
-                        searchInput.value = v.full_name;
-                        resultsBox.style.display = 'none';
-                        document.getElementById('welcome_back').style.display = 'none';
-                        validateForm();
-                    };
-                    resultsBox.appendChild(div);
-                });
-            } else {
-                resultsBox.innerHTML = '<div class="loading-spinner">Ничего не найдено</div>';
-            }
-        } catch (e) { 
-            resultsBox.innerHTML = '<div class="loading-spinner" style="color:red;">Ошибка связи</div>'; 
-        }
+            (data.result?.data || []).forEach(v => {
+                const div = document.createElement('div');
+                div.className = 'search-item';
+                div.innerHTML = `<b>${v.full_name}</b><br><small>ID: ${v.id} • Vols: ${v.volunteering_count}</small>`;
+                div.onclick = () => {
+                    selectedVolunteer = v;
+                    searchInput.value = v.full_name;
+                    resultsBox.style.display = 'none';
+                    document.getElementById('welcome_back').style.display = 'none';
+                    validateForm();
+                };
+                resultsBox.appendChild(div);
+            });
+        } catch (e) { resultsBox.innerHTML = 'Ошибка'; }
     }
 
     function validateForm() {
-        if (selectedVolunteer && roleSelect.value) {
-            submitBtn.disabled = false;
-            submitBtn.innerText = "Записаться волонтером";
-        } else {
-            submitBtn.disabled = true;
-            submitBtn.innerText = selectedVolunteer ? "Выберите позицию" : "Выберите человека";
-        }
+        submitBtn.disabled = !(selectedVolunteer && roleSelect.value);
+        submitBtn.innerText = selectedVolunteer ? (roleSelect.value ? "Записаться волонтером" : "Выберите позицию") : "Выберите человека";
     }
 
     async function sendData() {
-        if (!selectedVolunteer || !roleSelect.value) return;
         submitBtn.innerText = "Записываем...";
         submitBtn.disabled = true;
-
         const payload = {
             verst_id: selectedVolunteer.id,
             role_id: roleSelect.value,
             role_name: roleSelect.options[roleSelect.selectedIndex].text,
             full_name: selectedVolunteer.full_name,
-            vk_id: vkUser ? vkUser.id : "",
-            vk_name: vkUser ? (vkUser.first_name + " " + vkUser.last_name) : ""
+            vk_id: vkUser.id,
+            vk_name: vkUser.first_name + " " + vkUser.last_name
         };
+        await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+        alert("Записано! Статистика обновится в рейтинге.");
+        location.reload();
+    }
 
+    async function loadRating() {
+        const container = document.getElementById('rating_list');
+        container.innerHTML = 'Загрузка...';
         try {
-            await fetch(SCRIPT_URL, { 
-                method: 'POST', 
-                mode: 'no-cors', 
-                body: JSON.stringify(payload)
+            const res = await fetch(`${SCRIPT_URL}?get_rating=1`);
+            const data = await res.json();
+            // Сортировка по волонтерствам (как приоритет)
+            data.sort((a,b) => b.vols - a.vols);
+            container.innerHTML = '';
+            
+            data.forEach((u, i) => {
+                const getBadge = (type, val) => {
+                    if (val < 10) return '';
+                    const levels = [500, 250, 100, 50, 25, 10];
+                    const lv = levels.find(l => val >= l);
+                    if (!lv) return '';
+                    const cls = `${type}-${lv > 100 ? 100 : lv}`;
+                    return `<span class="badge ${cls}">${type === 'run' ? '🏃' : '🧡'} ${lv}</span>`;
+                };
+
+                const item = document.createElement('div');
+                item.className = 'rating-item';
+                item.innerHTML = `
+                    <div class="rank">${i+1}</div>
+                    <div class="user-info">
+                        <span class="user-name">${u.name}</span>
+                        <div class="stats-row">
+                            ${getBadge('run', u.runs)}
+                            ${getBadge('vol', u.vols)}
+                        </div>
+                    </div>
+                    <div style="text-align:right">
+                        <div style="font-weight:900; color:#E6564C">${u.vols}</div>
+                        <div style="font-size:10px; color:#999">Vols</div>
+                    </div>
+                `;
+                container.appendChild(item);
             });
-            alert("Записано! Список в чатах обновится через пару секунд.");
-            location.reload(); 
-        } catch (e) {
-            alert("Ошибка при отправке.");
-            submitBtn.disabled = false;
-        }
+        } catch (e) { container.innerHTML = 'Ошибка'; }
     }
 
     async function loadQueue() {
-        const tbody = document.querySelector('#queue_table tbody');
         try {
             const res = await fetch(SCRIPT_URL);
             const data = await res.json();
-            if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:#999; padding:20px;">Пока никто не записался</td></tr>';
-                return;
-            }
-            tbody.innerHTML = '';
+            const tbody = document.querySelector('#queue_table tbody');
             data.reverse().forEach(item => {
                 let row = tbody.insertRow();
                 row.insertCell(0).innerHTML = `<span class="role-tag">${item.role_name}</span>`;
-                let nameCell = row.insertCell(1);
-                nameCell.className = 'full-name-cell';
-                nameCell.innerText = item.full_name;
+                let nc = row.insertCell(1); nc.className = 'full-name-cell'; nc.innerText = item.full_name;
             });
-        } catch(e) {
-            tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:red; padding:20px;">Ошибка загрузки</td></tr>';
-        }
+        } catch(e) {}
     }
     loadQueue();
 </script>
-
 </body>
 </html>
