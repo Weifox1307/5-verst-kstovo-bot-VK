@@ -18,5 +18,5 @@ jobs:
       - name: Run weather bot
         env:
           VK_TOKEN: ${{ secrets.VK_TOKEN }}
-          VK_CHAT_IDS: ${{ secrets.VK_CHAT_IDS }}
+          VK_CHAT_IDS: ${{ secrets.VK_CHAT_IDS }}  # ВОТ ЭТА СТРОЧКА НУЖНА ОБЯЗАТЕЛЬНО!
         run: python bot.py
