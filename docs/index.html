@@ -7,27 +7,35 @@
     <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
     <style>
         body { font-family: -apple-system, system-ui, Helvetica Neue, Roboto, sans-serif; padding: 0; background: #f5f5f5; color: #333; margin: 0; padding-bottom: 30px; }
+        
         .tabs { display: flex; background: #2B326D; position: sticky; top: 0; z-index: 1000; padding: 5px; gap: 5px; }
         .tab { flex: 1; text-align: center; padding: 12px; font-weight: bold; color: #fff; opacity: 0.6; cursor: pointer; border-radius: 8px; font-size: 14px; transition: 0.2s; }
         .tab.active { opacity: 1; background: rgba(255,255,255,0.15); }
+
         .card { background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin: 15px; }
         h2 { color: #2B326D; font-size: 18px; margin-top: 0; margin-bottom: 12px; border-bottom: 2px solid #f0f2ff; padding-bottom: 8px; }
         .date-badge { color: #E6564C; font-weight: bold; }
-        .welcome-msg { background: #f0f2ff; padding: 12px; border-radius: 10px; font-size: 13px; margin-bottom: 15px; color: #2B326D; display: none; border: 1px solid #dce1e6; line-height: 1.4; }
+        
+        .welcome-msg { background: #f0f2ff; padding: 12px; border-radius: 10px; font-size: 13px; margin-bottom: 15px; color: #2B326D; display: none; border: 1px solid #dce1e6; line-height: 1.6; }
+        
         label { font-size: 11px; color: #999; margin-left: 4px; font-weight: 600; text-transform: uppercase; }
         input, select { width: 100%; padding: 12px; margin: 5px 0 15px 0; border: 1px solid #dce1e6; border-radius: 8px; box-sizing: border-box; font-size: 15px; outline: none; background: #f9fafb; }
         button { width: 100%; padding: 14px; background: #E6564C; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
         button:disabled { background: #b0b0b0; }
+
         #search_results { background: white; border: 1px solid #dce1e6; border-radius: 8px; max-height: 250px; overflow-y: auto; display: none; position: absolute; width: 100%; z-index: 1000; box-shadow: 0 10px 25px rgba(0,0,0,0.1); top: 52px; }
         .search-item { padding: 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+        
+        /* Рейтинг */
         .rating-item { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
         .rank { width: 30px; font-weight: 900; color: #2B326D; font-size: 16px; }
         .user-info { flex: 1; padding-left: 5px; }
         .user-name { font-weight: 700; font-size: 15px; color: #2B326D; display: block; }
         .stats-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
-        .badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 800; text-transform: uppercase; white-space: nowrap; color: #fff; display: flex; align-items: center; gap: 4px; }
         
         /* Цвета Клубов из палитры */
+        .badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 800; text-transform: uppercase; white-space: nowrap; color: #fff; display: flex; align-items: center; gap: 4px; }
+        
         .run10 { background: #fecc3f; color: #333; }
         .run25 { background: #f29104; }
         .run50 { background: #e6464c; }
@@ -40,6 +48,7 @@
 
         .volunteer-list { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
         .role-tag { background: #f0f2ff; color: #2B326D; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+        .full-name-cell { padding-left: 10px !important; }
     </style>
 </head>
 <body>
@@ -53,11 +62,13 @@
     <div class="card">
         <h2>Записаться на <span id="event_date" class="date-badge">...</span></h2>
         <div id="welcome_back" class="welcome-msg"></div>
+        
         <label>Кто записывается:</label>
         <div style="position:relative">
             <input type="text" id="verst_search" placeholder="Введите фамилию или ID..." autocomplete="off">
             <div id="search_results"></div>
         </div>
+        
         <label>Позиция волонтера:</label>
         <select id="role_id" onchange="validateForm()">
             <option value="" disabled selected>Выберите роль из списка</option>
@@ -114,10 +125,13 @@
 
 <script>
     vkBridge.send("VKWebAppInit");
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx-D2gRDsVAdJkK8W_8OKvHv0A3csFTzUIhqTa37Rd8V_mBISDEGDVexlMt6tE0LIhNBw/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwvIORCWO1TJrKbNgMQXWzCH_A3AQRub4mcchV3tfJRbNgwI4XMW0wAXf1nngV409eGSA/exec';
     
     let selectedVolunteer = null;
     let vkUser = null;
+
+    const runIcon = `<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M13.49 5.42c1.23 0 2.22-1 2.22-2.22A2.22 2.22 0 0 0 13.5 1a2.22 2.22 0 0 0-2.23 2.22c0 1.22.99 2.2 2.22 2.2M10.34 11l-2.1-1.03c-.34-.17-.55-.52-.55-.91 0-.74.79-1.22 1.45-.91l4.83 2.3c.53.25.87.78.87 1.37V17h-2v-4.43l-1.74-.83V23h-2v-6.95l.45-1.5L7.2 13c-.34-.16-.55-.52-.55-.9 0-.75.8-1.23 1.46-.9l2.23 1.03V11z'/%3E%3C/svg%3E" width="12" />`;
+    const volIcon = "🧡 ";
 
     function switchTab(t) {
         document.getElementById('section_rec').style.display = t === 'rec' ? 'block' : 'none';
@@ -138,11 +152,12 @@
                 document.getElementById('verst_search').value = data.full_name;
                 const welcome = document.getElementById('welcome_back');
                 welcome.style.display = 'block';
-                let txt = `👋 <b>${vkUser.first_name}</b>, твои данные подставлены!`;
+                
+                let welcomeText = `👋 <b>${vkUser.first_name}</b>, твои данные подставлены!`;
                 if (data.stats) {
-                    txt += `<br><small>Твои результаты: 🏃 ${data.stats.runs} финишей | 🧡 ${data.stats.vols} волонтёрств</small>`;
+                    welcomeText += `<br>Твои результаты: ${runIcon} ${data.stats.runs} финишей | ${volIcon} ${data.stats.vols} волонтерств`;
                 }
-                welcome.innerHTML = txt;
+                welcome.innerHTML = welcomeText;
                 validateForm();
             }
 
@@ -155,20 +170,14 @@
 
     const searchInput = document.getElementById('verst_search');
     const resultsBox = document.getElementById('search_results');
-    const submitBtn = document.getElementById('submit_btn');
-    const roleSelect = document.getElementById('role_id');
 
     searchInput.addEventListener('input', (e) => {
         const query = e.target.value.trim();
         if (query.length < 3) { resultsBox.style.display = 'none'; selectedVolunteer = null; validateForm(); return; }
         clearTimeout(window.searchTimeout);
-        window.searchTimeout = setTimeout(() => fetchVolunteers(query), 500);
-    });
-
-    async function fetchVolunteers(query) {
-        resultsBox.innerHTML = '<div style="padding:15px">Поиск...</div>';
-        resultsBox.style.display = 'block';
-        try {
+        window.searchTimeout = setTimeout(async () => {
+            resultsBox.innerHTML = '<div style="padding:15px">Поиск в базе...</div>';
+            resultsBox.style.display = 'block';
             const res = await fetch(`${SCRIPT_URL}?search=${encodeURIComponent(query)}`);
             const data = await res.json();
             resultsBox.innerHTML = '';
@@ -185,21 +194,23 @@
                 };
                 resultsBox.appendChild(div);
             });
-        } catch (e) { resultsBox.innerHTML = 'Ошибка сети'; }
-    }
+        }, 500);
+    });
 
     function validateForm() {
-        submitBtn.disabled = !(selectedVolunteer && roleSelect.value);
-        submitBtn.innerText = selectedVolunteer ? (roleSelect.value ? "Записаться волонтером" : "Выберите позицию") : "Выберите человека";
+        const btn = document.getElementById('submit_btn');
+        const role = document.getElementById('role_id');
+        btn.disabled = !(selectedVolunteer && role.value);
+        btn.innerText = selectedVolunteer ? (role.value ? "Записаться волонтером" : "Выберите позицию") : "Выберите человека";
     }
 
     async function sendData() {
-        submitBtn.innerText = "Записываем...";
-        submitBtn.disabled = true;
+        const btn = document.getElementById('submit_btn');
+        btn.innerText = "Записываем..."; btn.disabled = true;
         const payload = {
             verst_id: selectedVolunteer.id,
-            role_id: roleSelect.value,
-            role_name: roleSelect.options[roleSelect.selectedIndex].text,
+            role_id: document.getElementById('role_id').value,
+            role_name: document.getElementById('role_id').options[document.getElementById('role_id').selectedIndex].text,
             full_name: selectedVolunteer.full_name,
             vk_id: vkUser.id,
             vk_name: vkUser.first_name + " " + vkUser.last_name
@@ -220,8 +231,10 @@
             data.forEach((u, i) => {
                 const item = document.createElement('div');
                 item.className = 'rating-item';
-                const rBadge = u.run_club ? `<span class="badge ${u.run_club}"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M13.49 5.42c1.23 0 2.22-1 2.22-2.22A2.22 2.22 0 0 0 13.5 1a2.22 2.22 0 0 0-2.23 2.22c0 1.22.99 2.2 2.22 2.2M10.34 11l-2.1-1.03c-.34-.17-.55-.52-.55-.91 0-.74.79-1.22 1.45-.91l4.83 2.3c.53.25.87.78.87 1.37V17h-2v-4.43l-1.74-.83V23h-2v-6.95l.45-1.5L7.2 13c-.34-.16-.55-.52-.55-.9 0-.75.8-1.23 1.46-.9l2.23 1.03V11z'/%3E%3C/svg%3E" width="12" style="margin-top:-2px" /%3E ${u.run_club.replace('run','') }</span>` : '';
-                const vBadge = u.vol_club ? `<span class="badge ${u.vol_club}">🧡 ${u.vol_club.replace('vol','') }</span>` : '';
+                
+                const rBadge = u.run_club ? `<span class="badge ${u.run_club}">${runIcon} ${u.run_club.replace('run','')}</span>` : '';
+                const vBadge = u.vol_club ? `<span class="badge ${u.vol_club}">${volIcon} ${u.vol_club.replace('vol','')}</span>` : '';
+                
                 item.innerHTML = `
                     <div class="rank">${i+1}</div>
                     <div class="user-info">
