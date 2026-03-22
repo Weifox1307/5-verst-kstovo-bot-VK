@@ -1,44 +1,90 @@
-import vk_api
-from vk_api.longpoll import VkLongPoll, VkEventType
 import os
+import requests
+import random
 import sys
 
-# Достаем ключ из секретов GitHub
-token = os.getenv('VK_TOKEN')
+# --- НАСТРОЙКИ ---
+VK_TOKEN = os.getenv('VK_TOKEN')
+# Твои ID чатов (Peer ID)
+CHAT_IDS = [
+    2000000001,  # Флудилка
+    2000000002,  # Набор волонтеров
+    2000000263,  # Чат организаторов
+    -231155212   # Канал сообщества
+]
 
-if not token:
-    print("Ошибка: VK_TOKEN не найден в переменных окружения!")
-    sys.exit(1)
+# Координаты парка Юбилейный (Кстово)
+LAT = 56.1611
+LON = 44.2182
 
-def main():
+def get_weather():
+    """Получает прогноз погоды через Open-Meteo API"""
+    url = f"https://api.open-meteo.com/v1/forecast?latitude={LAT}&longitude={LON}&hourly=temperature_2m,precipitation_probability,weathercode&timezone=Europe%2FMoscow&forecast_days=1"
+    
     try:
-        vk_session = vk_api.VkApi(token=token)
-        longpoll = VkLongPoll(vk_session)
-        vk = vk_session.get_api()
+        response = requests.get(url, timeout=10)
+        data = response.json()
         
-        print("Бот '5 вёрст Кстово' запущен и готов к работе! 🏃‍♂️")
+        # Индекс 9 соответствует 09:00 утра
+        temp = data['hourly']['temperature_2m'][9]
+        prob = data['hourly']['precipitation_probability'][9]
+        code = data['hourly']['weathercode'][9]
 
-        for event in longpoll.listen():
-            if event.type == VkEventType.MESSAGE_NEW and event.to_me:
-                msg = event.text.lower()
-                user_id = event.user_id
+        # Расшифровка кодов погоды WMO
+        weather_map = {
+            0: "Ясно ☀️",
+            1: "Преимущественно ясно 🌤",
+            2: "Переменная облачность ⛅",
+            3: "Пасмурно ☁️",
+            45: "Туман 🌫️",
+            51: "Морось 🌧️",
+            61: "Небольшой дождь 🌦️",
+            63: "Дождь ☔",
+            71: "Небольшой снег ❄️",
+            73: "Снегопад 🌨️",
+            80: "Ливневый дождь ⛈️"
+        }
+        status = weather_map.get(code, "Облачно ☁️")
 
-                # Твоя база ответов
-                if msg in ["привет", "старт", "начало", "инфо"]:
-                    vk.messages.send(
-                        user_id=user_id,
-                        message="Привет, атлет! 🏃‍♂️\nСтарт каждую субботу в 9:00 в парке 'Юбилейный'.",
-                        random_id=0
-                    )
-                elif msg == "статус":
-                    vk.messages.send(
-                        user_id=user_id,
-                        message="Бот на базе и работает в штатном режиме! 🦾",
-                        random_id=0
-                    )
+        msg = (
+            f"🌳 ПОГОДА НА СТАРТЕ В 09:00:\n\n"
+            f"🌡 Температура: {temp}°C\n"
+            f"☁ На улице: {status}\n"
+            f"☔ Вероятность осадков: {prob}%\n\n"
+            f"Одевайтесь по погоде и до встречи в Юбилейном! 🧡"
+        )
+        return msg
     except Exception as e:
-        print(f"Произошла ошибка: {e}")
-        # Если ошибка, скрипт завершится, и GitHub Actions перезапустит его позже
+        print(f"Ошибка получения погоды: {e}")
+        return None
+
+def send_vk_message(peer_id, text):
+    """Отправляет сообщение в ВК"""
+    url = "https://api.vk.com/method/messages.send"
+    params = {
+        "access_token": VK_TOKEN,
+        "peer_id": peer_id,
+        "message": text,
+        "random_id": random.randint(1, 2**31),
+        "v": "5.131"
+    }
+    try:
+        res = requests.post(url, data=params, timeout=10).json()
+        if "error" in res:
+            print(f"Ошибка ВК ({peer_id}): {res['error']['error_msg']}")
+        else:
+            print(f"Успешно отправлено в чат {peer_id}")
+    except Exception as e:
+        print(f"Ошибка сети: {e}")
 
 if __name__ == "__main__":
-    main()
+    if not VK_TOKEN:
+        print("Ошибка: VK_TOKEN не найден!")
+        sys.exit(1)
+
+    weather_text = get_weather()
+    if weather_text:
+        for chat in CHAT_IDS:
+            send_vk_message(chat, weather_text)
+    else:
+        print("Не удалось сформировать прогноз.")
