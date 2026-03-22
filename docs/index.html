@@ -9,6 +9,7 @@
         body { font-family: -apple-system, system-ui, Helvetica Neue, Roboto, sans-serif; padding: 15px; background: #f5f5f5; color: #333; margin: 0; }
         .card { background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; }
         h2 { color: #2B326D; font-size: 18px; margin-top: 0; margin-bottom: 12px; border-bottom: 2px solid #f0f2ff; padding-bottom: 8px; }
+        .date-badge { color: #E6564C; font-weight: bold; }
         
         label { font-size: 12px; color: #666; margin-left: 4px; font-weight: 600; text-transform: uppercase; }
         input, select { width: 100%; padding: 12px; margin: 8px 0 16px 0; border: 1px solid #dce1e6; border-radius: 8px; box-sizing: border-box; font-size: 15px; outline: none; background-color: #f9fafb; }
@@ -50,7 +51,7 @@
 <body>
 
 <div class="card">
-    <h2>Записаться на старт</h2>
+    <h2>Записаться на <span id="event_date" class="date-badge">...</span></h2>
     
     <label>Кто записывается:</label>
     <div id="search_wrapper">
@@ -113,16 +114,33 @@
 <script>
     vkBridge.send("VKWebAppInit");
 
-    // ВАЖНО: Укажи здесь свою ссылку на опубликованный скрипт Google Apps Script
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzRTYbrjjsQeyGYyTBMRgL5dIMEjVZPSbs0TZW3cXO4p-vXa7GBbv8q4Xcc6m2rmGkbeQ/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxo8BHgiWHc__0SNQSXsi33PER_jriT55F32Cjj8N5EXWZwX8uWIBRbAScsaLvX55soXg/exec';
     
     let selectedVolunteer = null;
+    let vkUser = null;
+
+    // Инициализация: получаем данные пользователя ВК и дату с сервера
+    async function init() {
+        try {
+            // Получаем инфо о том, кто открыл приложение
+            vkUser = await vkBridge.send("VKWebAppGetUserInfo");
+            
+            // Получаем дату ближайшей субботы из Google Script
+            const res = await fetch(SCRIPT_URL + "?get_date=1");
+            const data = await res.json();
+            document.getElementById('event_date').innerText = data.date;
+        } catch (e) { 
+            console.error("Ошибка инициализации", e); 
+            document.getElementById('event_date').innerText = "ближайший старт";
+        }
+    }
+    init();
+
     const searchInput = document.getElementById('verst_search');
     const resultsBox = document.getElementById('search_results');
     const submitBtn = document.getElementById('submit_btn');
     const roleSelect = document.getElementById('role_id');
 
-    // Живой поиск
     searchInput.addEventListener('input', (e) => {
         const query = e.target.value.trim();
         if (query.length < 3) { 
@@ -131,7 +149,6 @@
             validateForm();
             return; 
         }
-        
         clearTimeout(window.searchTimeout);
         window.searchTimeout = setTimeout(() => fetchVolunteers(query), 500);
     });
@@ -143,8 +160,6 @@
         try {
             const response = await fetch(`${SCRIPT_URL}?search=${encodeURIComponent(query)}`);
             const resData = await response.json();
-            
-            // Данные от NRMS приходят в result.data
             const list = resData.result?.data || [];
 
             resultsBox.innerHTML = '';
@@ -152,7 +167,6 @@
                 list.forEach(v => {
                     const div = document.createElement('div');
                     div.className = 'search-item';
-                    // Показываем Имя, ID и Домашний парк
                     div.innerHTML = `
                         <b>${v.full_name}</b>
                         <small>ID: ${v.id} • Парк: ${v.home_event || 'не указан'}</small>
@@ -186,27 +200,27 @@
     async function sendData() {
         if (!selectedVolunteer || !roleSelect.value) return;
 
+        submitBtn.innerText = "Записываем...";
+        submitBtn.disabled = true;
+
         const payload = {
             verst_id: selectedVolunteer.id,
             role_id: roleSelect.value,
             role_name: roleSelect.options[roleSelect.selectedIndex].text,
-            full_name: selectedVolunteer.full_name
+            full_name: selectedVolunteer.full_name,
+            vk_id: vkUser ? vkUser.id : "",
+            vk_name: vkUser ? (vkUser.first_name + " " + vkUser.last_name) : ""
         };
 
-        submitBtn.innerText = "Записываем...";
-        submitBtn.disabled = true;
-
         try {
-            // mode: 'no-cors' используется для отправки в Google Script без проблем с CORS
             await fetch(SCRIPT_URL, { 
                 method: 'POST', 
                 mode: 'no-cors', 
-                body: JSON.stringify(payload),
-                headers: { 'Content-Type': 'application/json' }
+                body: JSON.stringify(payload)
             });
             
-            alert("Заявка принята! Данные попадут на сайт 5 вёрст в течение получаса.");
-            location.reload(); // Перезагружаем для обновления списка
+            alert("Записано! Список в чате обновится через пару секунд.");
+            location.reload(); 
         } catch (e) {
             alert("Произошла ошибка при отправке данных.");
             submitBtn.disabled = false;
@@ -214,7 +228,6 @@
         }
     }
 
-    // Загрузка списка уже записанных из таблицы
     async function loadQueue() {
         const tbody = document.querySelector('#queue_table tbody');
         try {
@@ -227,7 +240,6 @@
             }
 
             tbody.innerHTML = '';
-            // Переворачиваем, чтобы последние записи были сверху
             data.reverse().forEach(item => {
                 let row = tbody.insertRow();
                 row.insertCell(0).innerHTML = `<span class="role-tag">${item.role_name}</span>`;
@@ -236,7 +248,7 @@
                 nameCell.innerText = item.full_name;
             });
         } catch(e) {
-            tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:red; padding:20px;">Не удалось загрузить список</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:red; padding:20px;">Ошибка загрузки списка</td></tr>';
         }
     }
 
