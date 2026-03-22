@@ -11,6 +11,19 @@
         h2 { color: #2B326D; font-size: 18px; margin-top: 0; margin-bottom: 12px; border-bottom: 2px solid #f0f2ff; padding-bottom: 8px; }
         .date-badge { color: #E6564C; font-weight: bold; }
         
+        /* Сообщение об автозаполнении */
+        .welcome-msg { 
+            background: #f0f2ff; 
+            padding: 12px; 
+            border-radius: 10px; 
+            font-size: 13px; 
+            margin-bottom: 15px; 
+            color: #2B326D; 
+            display: none; 
+            border: 1px solid #dce1e6;
+            line-height: 1.4;
+        }
+
         label { font-size: 12px; color: #666; margin-left: 4px; font-weight: 600; text-transform: uppercase; }
         input, select { width: 100%; padding: 12px; margin: 8px 0 16px 0; border: 1px solid #dce1e6; border-radius: 8px; box-sizing: border-box; font-size: 15px; outline: none; background-color: #f9fafb; }
         input:focus, select:focus { border-color: #2B326D; background-color: #fff; }
@@ -34,8 +47,6 @@
         }
         
         .search-item { padding: 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.1s; }
-        .search-item:last-child { border-bottom: none; }
-        .search-item:hover { background: #f0f2ff; }
         .search-item b { display: block; color: #2B326D; font-size: 15px; }
         .search-item small { color: #666; font-size: 12px; display: block; margin-top: 2px; }
 
@@ -53,6 +64,9 @@
 <div class="card">
     <h2>Записаться на <span id="event_date" class="date-badge">...</span></h2>
     
+    <!-- Плашка автозаполнения -->
+    <div id="welcome_back" class="welcome-msg"></div>
+
     <label>Кто записывается:</label>
     <div id="search_wrapper">
         <input type="text" id="verst_search" placeholder="Введите фамилию или ID..." autocomplete="off">
@@ -114,24 +128,37 @@
 <script>
     vkBridge.send("VKWebAppInit");
 
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw9bQSgTvbMaFfM1_zgJFqr0UzUI9JRV3oVfxV8FXF8Xh2R9MFU2UmMc6wTDZsXgGb9-Q/exec';
+    // Ссылка на твой скрипт
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHPAHWG80NPk77tC0PNXvs4kKsRoqKQ2aAFcQElbmu1fqLNcLaPgHVrFEjujwndu2sqg/exec';
     
     let selectedVolunteer = null;
     let vkUser = null;
 
-    // Инициализация: получаем данные пользователя ВК и дату с сервера
+    // Инициализация: получаем данные ВК, дату и проверяем автозаполнение
     async function init() {
         try {
-            // Получаем инфо о том, кто открыл приложение
+            // 1. Получаем инфо из ВК
             vkUser = await vkBridge.send("VKWebAppGetUserInfo");
             
-            // Получаем дату ближайшей субботы из Google Script
+            // 2. Проверяем в таблице, был ли этот VK ID раньше
+            const checkRes = await fetch(`${SCRIPT_URL}?check_vk_id=${vkUser.id}`);
+            const checkData = await checkRes.json();
+            
+            if (checkData.found) {
+                selectedVolunteer = { id: checkData.verst_id, full_name: checkData.full_name };
+                document.getElementById('verst_search').value = checkData.full_name;
+                const welcome = document.getElementById('welcome_back');
+                welcome.style.display = 'block';
+                welcome.innerHTML = `👋 <b>${vkUser.first_name}</b>, твои данные (ID ${checkData.verst_id}) подставлены автоматически!`;
+                validateForm();
+            }
+
+            // 3. Получаем дату субботы
             const res = await fetch(SCRIPT_URL + "?get_date=1");
             const data = await res.json();
             document.getElementById('event_date').innerText = data.date;
         } catch (e) { 
             console.error("Ошибка инициализации", e); 
-            document.getElementById('event_date').innerText = "ближайший старт";
         }
     }
     init();
@@ -141,6 +168,7 @@
     const submitBtn = document.getElementById('submit_btn');
     const roleSelect = document.getElementById('role_id');
 
+    // Живой поиск
     searchInput.addEventListener('input', (e) => {
         const query = e.target.value.trim();
         if (query.length < 3) { 
@@ -156,25 +184,21 @@
     async function fetchVolunteers(query) {
         resultsBox.innerHTML = '<div class="loading-spinner">Поиск в базе NRMS...</div>';
         resultsBox.style.display = 'block';
-
         try {
             const response = await fetch(`${SCRIPT_URL}?search=${encodeURIComponent(query)}`);
             const resData = await response.json();
             const list = resData.result?.data || [];
-
             resultsBox.innerHTML = '';
             if (list.length > 0) {
                 list.forEach(v => {
                     const div = document.createElement('div');
                     div.className = 'search-item';
-                    div.innerHTML = `
-                        <b>${v.full_name}</b>
-                        <small>ID: ${v.id} • Парк: ${v.home_event || 'не указан'}</small>
-                    `;
+                    div.innerHTML = `<b>${v.full_name}</b><small>ID: ${v.id} • ${v.home_event || ''}</small>`;
                     div.onclick = () => {
                         selectedVolunteer = v;
                         searchInput.value = v.full_name;
                         resultsBox.style.display = 'none';
+                        document.getElementById('welcome_back').style.display = 'none';
                         validateForm();
                     };
                     resultsBox.appendChild(div);
@@ -182,8 +206,8 @@
             } else {
                 resultsBox.innerHTML = '<div class="loading-spinner">Ничего не найдено</div>';
             }
-        } catch (e) {
-            resultsBox.innerHTML = '<div class="loading-spinner" style="color:red;">Ошибка связи с базой</div>';
+        } catch (e) { 
+            resultsBox.innerHTML = '<div class="loading-spinner" style="color:red;">Ошибка связи</div>'; 
         }
     }
 
@@ -199,7 +223,6 @@
 
     async function sendData() {
         if (!selectedVolunteer || !roleSelect.value) return;
-
         submitBtn.innerText = "Записываем...";
         submitBtn.disabled = true;
 
@@ -218,13 +241,11 @@
                 mode: 'no-cors', 
                 body: JSON.stringify(payload)
             });
-            
-            alert("Записано! Список в чате обновится через пару секунд.");
+            alert("Записано! Список в чатах обновится через пару секунд.");
             location.reload(); 
         } catch (e) {
-            alert("Произошла ошибка при отправке данных.");
+            alert("Ошибка при отправке.");
             submitBtn.disabled = false;
-            submitBtn.innerText = "Попробовать снова";
         }
     }
 
@@ -233,12 +254,10 @@
         try {
             const res = await fetch(SCRIPT_URL);
             const data = await res.json();
-            
             if (data.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:#999; padding:20px;">Пока никто не записался</td></tr>';
                 return;
             }
-
             tbody.innerHTML = '';
             data.reverse().forEach(item => {
                 let row = tbody.insertRow();
@@ -248,10 +267,9 @@
                 nameCell.innerText = item.full_name;
             });
         } catch(e) {
-            tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:red; padding:20px;">Ошибка загрузки списка</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:red; padding:20px;">Ошибка загрузки</td></tr>';
         }
     }
-
     loadQueue();
 </script>
 
