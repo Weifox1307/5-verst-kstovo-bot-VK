@@ -25,27 +25,20 @@
         button#submit_btn { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px; box-shadow: 0 4px 12px rgba(230, 86, 76, 0.2); }
         button:disabled { background: #b0b0b0; box-shadow: none; }
 
-        /* Таблица "В списке" - Карточки */
-        .vol-card { background: white; padding: 12px 15px; border-radius: 12px; border: 1px solid #ebedef; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .vol-card { background: white; padding: 12px 15px; border-radius: 12px; border: 1px solid #ebedef; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
         .vol-role-badge { background: #f0f2ff; color: var(--primary); padding: 4px 8px; border-radius: 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
         .vol-name-txt { font-weight: 600; font-size: 14px; color: #333; }
 
-        /* Модальные окна */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; align-items: center; justify-content: center; flex-direction: column; padding: 20px; box-sizing: border-box; overflow-y: auto; }
         .modal-content { background: #ffffff !important; padding: 25px; border-radius: 24px; width: 100%; max-width: 320px; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.3); color: #333; }
         .close-modal { margin-top: 20px; color: white; font-weight: bold; cursor: pointer; text-decoration: underline; font-size: 15px; }
 
-        /* Сетка ролей */
         .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .role-item-btn { background: #f8f9fa; border: 1px solid #eef0f2; padding: 15px 10px; border-radius: 12px; text-align: center; cursor: pointer; transition: 0.2s; }
-        .role-item-btn:active { transform: scale(0.95); background: #f0f2ff; }
+        .role-item-btn { background: #f8f9fa; border: 1px solid #eef0f2; padding: 15px 10px; border-radius: 12px; text-align: center; cursor: pointer; }
         .role-item-btn img { width: 50px; height: 50px; margin-bottom: 8px; border-radius: 10px; object-fit: cover; }
         .role-item-btn span { font-size: 11px; font-weight: bold; color: var(--primary); display: block; line-height: 1.2; }
 
-        /* Плавающая кнопка ? */
-        .fab-help { position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 1500; cursor: pointer; border: 2px solid white; }
-
-        /* Исправленные бейджи и рейтинг */
+        /* Рейтинг и Бейджи */
         .rating-item { display: flex; align-items: center; padding: 12px 5px; border-bottom: 1px solid #f0f2f5; }
         .rank { width: 35px; font-weight: 900; color: var(--primary); font-size: 16px; opacity: 0.4; flex-shrink: 0; }
         .user-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
@@ -58,8 +51,10 @@
         .badge img { width: 12px; height: 12px; filter: brightness(0) saturate(100%) invert(100%); }
         .run10 img, .vol10 img { filter: brightness(0) saturate(100%); }
 
-        .role-detail-img { width: 100%; border-radius: 15px; margin-bottom: 15px; border: 1px solid #eee; min-height: 150px; background: #fafafa; object-fit: cover; }
-        
+        .role-detail-img { width: 100%; height: auto; min-height: 150px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #eee; object-fit: cover; background: #fafafa; display: block; }
+        .qr-code-img { width: 200px; height: 200px; margin: 10px auto; display: block; background: #eee; }
+
+        .fab-help { position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 1500; cursor: pointer; border: 2px solid white; }
         #search_results, #rate_results { background: white; border: 1px solid #dce1e6; border-radius: 12px; max-height: 200px; overflow-y: auto; display: none; position: absolute; width: 100%; z-index: 1000; box-shadow: 0 10px 25px rgba(0,0,0,0.1); top: 52px; }
     </style>
 </head>
@@ -84,22 +79,22 @@
         <h2 style="border:none;">Ключевые роли</h2>
         <div class="role-grid">
             <div class="role-item-btn" onclick="showRoleDetail(1, 'Организатор', 'Главный человек на старте. Координирует волонтеров, проводит брифинг и следит за безопасностью.')">
-                <img src="https://raw.githubusercontent.com/Weifox1307/5-verst-kstovo-bot-VK/main/img/role_1.jpg" onerror="this.src='https://via.placeholder.com/100?text=Role'"><span>Организатор</span>
+                <img src="https://raw.githubusercontent.com/Weifox1307/5-verst-kstovo-bot-VK/main/role_1.jpg" onerror="this.src='https://via.placeholder.com/100?text=Role'"><span>Организатор</span>
             </div>
             <div class="role-item-btn" onclick="showRoleDetail(2, 'Секундомер', 'Нажимает кнопку СТАРТ и фиксирует время каждого финишера. Самая ответственная роль!')">
-                <img src="https://raw.githubusercontent.com/Weifox1307/5-verst-kstovo-bot-VK/main/img/role_2.jpg" onerror="this.src='https://via.placeholder.com/100?text=Role'"><span>Секундомер</span>
+                <img src="https://raw.githubusercontent.com/Weifox1307/5-verst-kstovo-bot-VK/main/role_2.jpg" onerror="this.src='https://via.placeholder.com/100?text=Role'"><span>Секундомер</span>
             </div>
             <div class="role-item-btn" onclick="showRoleDetail(11, 'Сканер', 'Сканирует личный штрих-код участника и карточку позиции после финиша.')">
-                <img src="https://raw.githubusercontent.com/Weifox1307/5-verst-kstovo-bot-VK/main/img/role_11.jpg" onerror="this.src='https://via.placeholder.com/100?text=Role'"><span>Сканирование штрих-кодов</span>
+                <img src="https://raw.githubusercontent.com/Weifox1307/5-verst-kstovo-bot-VK/main/role_11.jpg" onerror="this.src='https://via.placeholder.com/100?text=Role'"><span>Сканер</span>
             </div>
             <div class="role-item-btn" onclick="showRoleDetail(13, 'Карточки', 'Выдает карточку с номером позиции каждому, кто пересек финишную черту.')">
-                <img src="https://raw.githubusercontent.com/Weifox1307/5-verst-kstovo-bot-VK/main/img/role_13.jpg" onerror="this.src='https://via.placeholder.com/100?text=Role'"><span>Карточки позиций</span>
+                <img src="https://raw.githubusercontent.com/Weifox1307/5-verst-kstovo-bot-VK/main/role_13.jpg" onerror="this.src='https://via.placeholder.com/100?text=Role'"><span>Карточки</span>
             </div>
-            <div class="role-item-btn" onclick="showRoleDetail(7, 'Маршал', 'Стоит на ключевых поворотах и точках, указывает путь и подбадривает участников.')">
-                <img src="https://raw.githubusercontent.com/Weifox1307/5-verst-kstovo-bot-VK/main/img/role_7.jpg" onerror="this.src='https://via.placeholder.com/100?text=Role'"><span>Маршал</span>
+            <div class="role-item-btn" onclick="showRoleDetail(7, 'Маршал', 'Стоит на ключевых поворотах, указывает путь и подбадривает участников.')">
+                <img src="https://raw.githubusercontent.com/Weifox1307/5-verst-kstovo-bot-VK/main/role_7.jpg" onerror="this.src='https://via.placeholder.com/100?text=Role'"><span>Маршал</span>
             </div>
             <div class="role-item-btn" onclick="showRoleDetail(19, 'Замыкающий', 'Идет последним, чтобы никто не остался на трассе один. Финиширует в самом конце.')">
-                <img src="https://raw.githubusercontent.com/Weifox1307/5-verst-kstovo-bot-VK/main/img/role_19.jpg" onerror="this.src='https://via.placeholder.com/100?text=Role'"><span>Замыкающий</span>
+                <img src="https://raw.githubusercontent.com/Weifox1307/5-verst-kstovo-bot-VK/main/role_19.jpg" onerror="this.src='https://via.placeholder.com/100?text=Role'"><span>Замыкающий</span>
             </div>
         </div>
     </div>
@@ -140,7 +135,7 @@
 </div>
 
 <div id="qr_modal" class="modal" onclick="closeQR()">
-    <div class="modal-content" style="text-align:center; background: #ffffff !important;" onclick="event.stopPropagation()">
+    <div class="modal-content" style="text-align:center;" onclick="event.stopPropagation()">
         <h3 style="color:var(--primary); margin:0 0 15px 0;">Личная карточка</h3>
         <div id="qr_img_box"></div>
         <p id="qr_id_text" style="color:var(--accent); margin:15px 0 0 0; font-weight:900; font-size:26px;"></p>
@@ -169,14 +164,9 @@
         <select id="role_id" onchange="validateForm()">
             <option value="" disabled selected>Выберите роль из списка</option>
             <optgroup label="Основные позиции">
-                <option value="1">Организатор</option>
-                <option value="2">Секундомер</option>
-                <option value="5">Фотограф</option>
-                <option value="7">Маршал</option>
-                <option value="8">Подготовка мероприятия</option>
-                <option value="11">Сканирование штрих-кодов</option>
-                <option value="13">Раздача карточек позиций</option>
-                <option value="19">Замыкающий</option>
+                <option value="1">Организатор</option><option value="2">Секундомер</option><option value="5">Фотограф</option>
+                <option value="7">Маршал</option><option value="8">Подготовка мероприятия</option><option value="11">Сканирование штрих-кодов</option>
+                <option value="13">Раздача карточек позиций</option><option value="19">Замыкающий</option>
             </optgroup>
             <optgroup label="Дополнительные позиции">
                 <option value="3">Сортировка карточек</option><option value="4">Обработка результатов</option><option value="6">Связи с общественностью</option><option value="9">Хранение и доставка оборудования</option><option value="10">Разное</option><option value="12">Завершение мероприятия</option><option value="14">Проверка карточек позиций</option><option value="15">Инструктаж новых участников</option><option value="16">Организация финиша</option><option value="17">Ведущий велосипед</option><option value="18">Помощь в раздаче карточек позиций</option><option value="20">Координация волонтёров</option><option value="23">Составление отчёта</option><option value="28">Пейсмейкер</option><option value="30">Лидер для слабовидящих</option><option value="31">Проведение разминки</option><option value="32">Сурдопереводчик</option><option value="33">Координатор парковки</option><option value="34">Проверка трассы</option><option value="35">Разметка трассы</option><option value="36">Ведущий мероприятия</option><option value="37">Проведение предстартового брифинга</option><option value="38">Видеограф</option>
@@ -191,7 +181,7 @@
 <div id="section_rate" style="display:none">
     <div class="card">
         <h2>Поиск участника</h2>
-        <label>Найди себя, чтобы привязать профиль:</label>
+        <label>Найди себя, чтобы привязать карту:</label>
         <div style="position:relative">
             <input type="text" id="rate_search" placeholder="Фамилия или ID..." autocomplete="off">
             <div id="rate_results"></div>
@@ -224,15 +214,18 @@
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
     
     function showRoleDetail(id, title, desc) {
-        document.getElementById('role_img').src = `${GITHUB_IMG_BASE}role_${id}.jpg`;
+        const img = document.getElementById('role_img');
+        img.src = `${GITHUB_IMG_BASE}role_${id}.jpg`;
         document.getElementById('role_title').innerText = title;
         document.getElementById('role_desc').innerText = desc;
         openModal('modal_role_detail');
     }
 
     function showQR(id, name) {
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=A${id}`;
-        document.getElementById('qr_img_box').innerHTML = `<img src="${qrUrl}" alt="QR">`;
+        const qrBox = document.getElementById('qr_img_box');
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=A${id}`;
+        
+        qrBox.innerHTML = `<img src="${qrUrl}" class="qr-code-img" alt="QR" style="width:200px;height:200px;display:block;margin:10px auto;">`;
         document.getElementById('qr_id_text').innerText = `A${id}`;
         document.getElementById('qr_name_text').innerText = name.toUpperCase();
         openModal('qr_modal');
