@@ -8,7 +8,7 @@
     <style>
         body { font-family: -apple-system, system-ui, Helvetica Neue, Roboto, sans-serif; padding: 0; background: #f5f5f5; color: #333; margin: 0; padding-bottom: 30px; }
         .tabs { display: flex; background: #2B326D; position: sticky; top: 0; z-index: 1000; padding: 5px; gap: 5px; }
-        .tab { flex: 1; text-align: center; padding: 12px; font-weight: bold; color: #fff; opacity: 0.6; cursor: pointer; border-radius: 8px; font-size: 14px; transition: 0.2s; }
+        .tab { flex: 1; text-align: center; padding: 12px; font-weight: bold; color: #fff; opacity: 0.6; cursor: pointer; border-radius: 8px; font-size: 14px; }
         .tab.active { opacity: 1; background: rgba(255,255,255,0.15); }
         .card { background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin: 15px; }
         h2 { color: #2B326D; font-size: 18px; margin-top: 0; margin-bottom: 12px; border-bottom: 2px solid #f0f2ff; padding-bottom: 8px; }
@@ -22,28 +22,32 @@
         button#submit_btn { width: 100%; padding: 14px; background: #E6564C; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
         button:disabled { background: #b0b0b0; }
 
+        /* Таблица "В списке" - исправленная */
+        .volunteer-list { width: 100%; border-collapse: separate; border-spacing: 0 10px; margin-top: 5px; }
+        .volunteer-list tr { background: #fcfdfe; }
+        .volunteer-list td { padding: 12px 10px; border-top: 1px solid #f0f2f5; border-bottom: 1px solid #f0f2f5; }
+        .volunteer-list td:first-child { border-left: 1px solid #f0f2f5; border-radius: 10px 0 0 10px; }
+        .volunteer-list td:last-child { border-right: 1px solid #f0f2f5; border-radius: 0 10px 10px 0; text-align: right; }
+        .role-tag { background: #f0f2ff; color: #2B326D; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+
         /* Модальное окно QR */
         #qr_modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; flex-direction: column; color: white; padding: 20px; box-sizing: border-box; }
-        .qr-container { background: white; padding: 25px; border-radius: 24px; text-align: center; width: 100%; max-width: 300px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        .qr-container { background: white; padding: 25px; border-radius: 24px; text-align: center; width: 100%; max-width: 300px; }
         .qr-container img { width: 100%; height: auto; border-radius: 10px; }
         .qr-container h3 { color: #2B326D; margin: 15px 0 5px 0; font-size: 20px; }
-        .qr-container p { color: #E6564C; margin: 0; font-weight: 900; font-size: 24px; letter-spacing: 1px; }
-        .qr-container span { color: #666; font-size: 14px; display: block; margin-top: 5px; font-weight: 500; }
+        .qr-container p { color: #E6564C; margin: 0; font-weight: 900; font-size: 24px; }
         .close-qr { margin-top: 30px; background: rgba(255,255,255,0.2); color: white; padding: 12px 40px; border-radius: 12px; font-weight: bold; cursor: pointer; border: 1px solid rgba(255,255,255,0.3); }
 
+        /* Рейтинг */
         .rating-item { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
         .rank { width: 30px; font-weight: 900; color: #2B326D; font-size: 16px; }
         .user-info { flex: 1; padding-left: 5px; }
         .user-name { font-weight: 700; font-size: 15px; color: #2B326D; display: block; }
         .stats-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
-        
         .badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 800; text-transform: uppercase; white-space: nowrap; color: #fff; display: flex; align-items: center; gap: 4px; }
+        
         .run10 { background: #fecc3f; color: #333; } .run25 { background: #f29104; } .run50 { background: #e6464c; } .run100, .run250, .run500 { background: #8c1f28; }
         .vol10 { background: #c9b4d8; color: #333; } .vol25 { background: #9d82aa; } .vol50 { background: #6c5391; } .vol100, .vol250, .vol500 { background: #422d58; }
-
-        .volunteer-list { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
-        .role-tag { background: #f0f2ff; color: #2B326D; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
-        .full-name-cell { padding-left: 10px !important; }
         .badge img { width: 12px; height: 12px; filter: brightness(0) saturate(100%) invert(100%); }
         .run10 img, .vol10 img { filter: brightness(0) saturate(100%); }
     </style>
@@ -55,7 +59,7 @@
         <h3>Карточка 5 вёрст</h3>
         <div id="qr_img_box"></div>
         <p id="qr_id_text"></p>
-        <span id="qr_name_text"></span>
+        <span id="qr_name_text" style="color:#666; font-size:14px; display:block; margin-top:5px; font-weight:500;"></span>
     </div>
     <div class="close-qr">Закрыть</div>
 </div>
@@ -125,6 +129,14 @@
 
 <div id="section_rate" style="display:none">
     <div class="card">
+        <h2>Поиск участника в рейтинге</h2>
+        <label>Найди себя, чтобы сохранить карточку:</label>
+        <div style="position:relative">
+            <input type="text" id="rate_search" placeholder="Фамилия или ID..." autocomplete="off">
+            <div id="rate_results" style="background: white; border: 1px solid #dce1e6; border-radius: 8px; max-height: 200px; overflow-y: auto; display: none; position: absolute; width: 100%; z-index: 1000; box-shadow: 0 10px 25px rgba(0,0,0,0.1); top: 52px;"></div>
+        </div>
+    </div>
+    <div class="card">
         <h2>Топ участников Кстово</h2>
         <div id="rating_list">Загрузка рейтинга...</div>
     </div>
@@ -132,7 +144,7 @@
 
 <script>
     vkBridge.send("VKWebAppInit");
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyOtpIACG-7RL61R5GPCf28sRDsMMGQCIZBbDraCRXn0G6QatPC2fDRkQhGYbxjdvun9Q/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwSg2eGjpYi-cl9BscJz-URWAk1N5mMFBKtab1AQPd3p7DxAs35nqsM3RkieBjDWgfsAQ/exec';
     
     let selectedVolunteer = null;
     let vkUser = null;
@@ -194,33 +206,49 @@
     }
     init();
 
-    const searchInput = document.getElementById('verst_search');
-    const resultsBox = document.getElementById('search_results');
-
-    searchInput.addEventListener('input', (e) => {
-        const query = e.target.value.trim();
-        if (query.length < 3) { resultsBox.style.display = 'none'; selectedVolunteer = null; validateForm(); return; }
-        clearTimeout(window.searchTimeout);
-        window.searchTimeout = setTimeout(async () => {
-            resultsBox.innerHTML = '<div style="padding:15px">Поиск...</div>';
-            resultsBox.style.display = 'block';
+    // Общая функция поиска
+    async function searchHandler(query, resultBox, isRecord) {
+        if (query.length < 3) { resultBox.style.display = 'none'; return; }
+        resultBox.innerHTML = '<div style="padding:15px">Поиск...</div>';
+        resultBox.style.display = 'block';
+        try {
             const res = await fetch(`${SCRIPT_URL}?search=${encodeURIComponent(query)}`);
             const data = await res.json();
-            resultsBox.innerHTML = '';
+            resultBox.innerHTML = '';
             (data.result?.data || []).forEach(v => {
                 const div = document.createElement('div');
-                div.className = 'search-item';
+                div.style.padding = '12px';
+                div.style.borderBottom = '1px solid #f0f0f0';
+                div.style.cursor = 'pointer';
                 div.innerHTML = `<b>${v.full_name}</b><br><small>ID: ${v.id}</small>`;
-                div.onclick = () => {
-                    selectedVolunteer = v;
-                    searchInput.value = v.full_name;
-                    resultsBox.style.display = 'none';
-                    document.getElementById('welcome_back').style.display = 'none';
-                    validateForm();
+                div.onclick = async () => {
+                    if (isRecord) {
+                        selectedVolunteer = v;
+                        document.getElementById('verst_search').value = v.full_name;
+                        resultBox.style.display = 'none';
+                        document.getElementById('welcome_back').style.display = 'none';
+                        validateForm();
+                    } else {
+                        // Регистрация в рейтинге без волонтерства
+                        resultBox.innerHTML = '<div style="padding:15px">Сохраняем...</div>';
+                        const payload = { action: "sync_only", vk_id: vkUser.id, verst_id: v.id, full_name: v.full_name };
+                        await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+                        alert("Профиль сохранен!"); location.reload();
+                    }
                 };
-                resultsBox.appendChild(div);
+                resultBox.appendChild(div);
             });
-        }, 500);
+        } catch (e) { resultBox.innerHTML = 'Ошибка'; }
+    }
+
+    document.getElementById('verst_search').addEventListener('input', (e) => {
+        clearTimeout(window.searchTimeout);
+        window.searchTimeout = setTimeout(() => searchHandler(e.target.value.trim(), document.getElementById('search_results'), true), 500);
+    });
+
+    document.getElementById('rate_search').addEventListener('input', (e) => {
+        clearTimeout(window.rateTimeout);
+        window.rateTimeout = setTimeout(() => searchHandler(e.target.value.trim(), document.getElementById('rate_results'), false), 500);
     });
 
     function validateForm() {
@@ -251,21 +279,14 @@
         try {
             const res = await fetch(`${SCRIPT_URL}?get_rating=1`);
             const data = await res.json();
-            // Сортировка по сумме финишей и волонтерств (даже если цифр нет в UI)
-            data.sort((a,b) => (b.runs + b.vols) - (a.runs + a.vols));
+            data.sort((a,b) => ((b.runs||0) + (b.vols||0)) - ((a.runs||0) + (a.vols||0)));
             container.innerHTML = '';
             data.forEach((u, i) => {
                 const item = document.createElement('div');
                 item.className = 'rating-item';
                 const rBadge = u.run_club ? `<span class="badge ${u.run_club}">${runIcon} ${u.run_club.replace('run','')}</span>` : '';
                 const vBadge = u.vol_club ? `<span class="badge ${u.vol_club}">${volIcon} ${u.vol_club.replace('vol','')}</span>` : '';
-                item.innerHTML = `
-                    <div class="rank">${i+1}</div>
-                    <div class="user-info">
-                        <span class="user-name">${u.name}</span>
-                        <div class="stats-row">${rBadge} ${vBadge}</div>
-                    </div>
-                `;
+                item.innerHTML = `<div class="rank">${i+1}</div><div class="user-info"><span class="user-name">${u.name}</span><div class="stats-row">${rBadge} ${vBadge}</div></div>`;
                 container.appendChild(item);
             });
         } catch (e) { container.innerHTML = 'Ошибка загрузки'; }
