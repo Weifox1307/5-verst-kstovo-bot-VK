@@ -6,7 +6,7 @@
     <title>Волонтерство 5 вёрст Кстово</title>
     <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
     <style>
-        body { font-family: -apple-system, system-ui, Helvetica Neue, Roboto, sans-serif; padding: 0; background: #f5f5f5; color: #333; margin: 0; padding-bottom: 20px; }
+        body { font-family: -apple-system, system-ui, Helvetica Neue, Roboto, sans-serif; padding: 0; background: #f5f5f5; color: #333; margin: 0; padding-bottom: 30px; }
         
         /* Вкладки */
         .tabs { display: flex; background: #2B326D; position: sticky; top: 0; z-index: 1000; padding: 5px; gap: 5px; }
@@ -16,10 +16,12 @@
         .card { background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin: 15px; }
         h2 { color: #2B326D; font-size: 18px; margin-top: 0; margin-bottom: 12px; border-bottom: 2px solid #f0f2ff; padding-bottom: 8px; }
         .date-badge { color: #E6564C; font-weight: bold; }
-        .welcome-msg { background: #f0f2ff; padding: 12px; border-radius: 10px; font-size: 13px; margin-bottom: 15px; color: #2B326D; display: none; border: 1px solid #dce1e6; }
+        .welcome-msg { background: #f0f2ff; padding: 12px; border-radius: 10px; font-size: 13px; margin-bottom: 15px; color: #2B326D; display: none; border: 1px solid #dce1e6; line-height: 1.4; }
         
         label { font-size: 11px; color: #999; margin-left: 4px; font-weight: 600; text-transform: uppercase; }
         input, select { width: 100%; padding: 12px; margin: 5px 0 15px 0; border: 1px solid #dce1e6; border-radius: 8px; box-sizing: border-box; font-size: 15px; outline: none; background: #f9fafb; }
+        input:focus, select:focus { border-color: #2B326D; background-color: #fff; }
+        
         button { width: 100%; padding: 14px; background: #E6564C; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
         button:disabled { background: #b0b0b0; }
 
@@ -35,20 +37,18 @@
         .user-info { flex: 1; padding-left: 5px; }
         .user-name { font-weight: 700; font-size: 15px; color: #2B326D; display: block; }
         .stats-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+        .badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 800; text-transform: uppercase; white-space: nowrap; color: #fff; }
         
-        /* Клубы Финишеров */
-        .run-10 { background: #fecc3f; color: #333; }
-        .run-25 { background: #f29104; color: #fff; }
-        .run-50 { background: #e6464c; color: #fff; }
-        .run-100 { background: #8c1f28; color: #fff; }
+        /* Цвета Клубов из палитры */
+        .run10 { background: #fecc3f; color: #333; }
+        .run25 { background: #f29104; }
+        .run50 { background: #e6464c; }
+        .run100, .run250, .run500 { background: #8c1f28; }
         
-        /* Клубы Волонтеров */
-        .vol-10 { background: #c9b4d8; color: #333; }
-        .vol-25 { background: #9d82aa; color: #fff; }
-        .vol-50 { background: #6c5391; color: #fff; }
-        .vol-100 { background: #422d58; color: #fff; }
-
-        .badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 800; text-transform: uppercase; white-space: nowrap; }
+        .vol10 { background: #c9b4d8; color: #333; }
+        .vol25 { background: #9d82aa; }
+        .vol50 { background: #6c5391; }
+        .vol100, .vol250, .vol500 { background: #422d58; }
 
         .volunteer-list { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
         .role-tag { background: #f0f2ff; color: #2B326D; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
@@ -62,16 +62,17 @@
     <div id="tab_rate" class="tab" onclick="switchTab('rate')">РЕЙТИНГ</div>
 </div>
 
-<!-- СЕКЦИЯ ЗАПИСИ -->
 <div id="section_rec">
     <div class="card">
         <h2>Записаться на <span id="event_date" class="date-badge">...</span></h2>
         <div id="welcome_back" class="welcome-msg"></div>
+        
         <label>Кто записывается:</label>
-        <div id="search_wrapper">
+        <div id="search_wrapper" style="position:relative">
             <input type="text" id="verst_search" placeholder="Введите фамилию или ID..." autocomplete="off">
             <div id="search_results"></div>
         </div>
+        
         <label>Позиция волонтера:</label>
         <select id="role_id" onchange="validateForm()">
             <option value="" disabled selected>Выберите роль из списка</option>
@@ -111,25 +112,26 @@
                 <option value="38">Видеограф</option>
             </optgroup>
         </select>
+        
         <button id="submit_btn" onclick="sendData()" disabled>Выберите человека</button>
     </div>
+
     <div class="card">
         <h2>В списке на субботу</h2>
         <table class="volunteer-list" id="queue_table"><tbody></tbody></table>
     </div>
 </div>
 
-<!-- СЕКЦИЯ РЕЙТИНГА -->
 <div id="section_rate" style="display:none">
     <div class="card">
         <h2>Топ участников Кстово</h2>
-        <div id="rating_list">Загрузка рейтинга...</div>
+        <div id="rating_list">Загрузка...</div>
     </div>
 </div>
 
 <script>
     vkBridge.send("VKWebAppInit");
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxADL0niRlwXUKcu5CIq9UtZRsWYIfn20AIKk8z7Ub2W80ia9F2wNBCEJO0GeXnwc47/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyXTvytKvPyMqmlHAAwJqKq7grGQnCSKktHXywHYtPehvGQB2ifWOtKLIXiQmcaEwpAGA/exec';
     
     let selectedVolunteer = null;
     let vkUser = null;
@@ -153,11 +155,11 @@
                 document.getElementById('verst_search').value = data.full_name;
                 const welcome = document.getElementById('welcome_back');
                 welcome.style.display = 'block';
-                let welcomeText = `👋 <b>${vkUser.first_name}</b>, твои данные подставлены!`;
+                let txt = `👋 <b>${vkUser.first_name}</b>, твои данные подставлены!`;
                 if (data.stats) {
-                    welcomeText += `<br><small>Твои результаты: 🏃 ${data.stats.runs} | 🧡 ${data.stats.vols}</small>`;
+                    txt += `<br><small>Твои результаты: 🏃 ${data.stats.runs} финишей | 🧡 ${data.stats.vols} волонтёрств</small>`;
                 }
-                welcome.innerHTML = welcomeText;
+                welcome.innerHTML = txt;
                 validateForm();
             }
 
@@ -200,7 +202,7 @@
                 };
                 resultsBox.appendChild(div);
             });
-        } catch (e) { resultsBox.innerHTML = 'Ошибка'; }
+        } catch (e) { resultsBox.innerHTML = 'Ошибка сети'; }
     }
 
     function validateForm() {
@@ -226,43 +228,31 @@
 
     async function loadRating() {
         const container = document.getElementById('rating_list');
-        container.innerHTML = 'Загрузка...';
+        container.innerHTML = 'Загрузка рейтинга...';
         try {
             const res = await fetch(`${SCRIPT_URL}?get_rating=1`);
             const data = await res.json();
-            // Сортировка по волонтерствам (как приоритет)
             data.sort((a,b) => b.vols - a.vols);
             container.innerHTML = '';
-            
             data.forEach((u, i) => {
-                const getBadge = (type, val) => {
-                    if (val < 10) return '';
-                    const levels = [500, 250, 100, 50, 25, 10];
-                    const lv = levels.find(l => val >= l);
-                    if (!lv) return '';
-                    const cls = `${type}-${lv > 100 ? 100 : lv}`;
-                    return `<span class="badge ${cls}">${type === 'run' ? '🏃' : '🧡'} ${lv}</span>`;
-                };
-
                 const item = document.createElement('div');
                 item.className = 'rating-item';
+                const rBadge = u.run_club ? `<span class="badge ${u.run_club}">🏃 ${u.run_club.replace('run','')}</span>` : '';
+                const vBadge = u.vol_club ? `<span class="badge ${u.vol_club}">🧡 ${u.vol_club.replace('vol','')}</span>` : '';
                 item.innerHTML = `
                     <div class="rank">${i+1}</div>
                     <div class="user-info">
                         <span class="user-name">${u.name}</span>
-                        <div class="stats-row">
-                            ${getBadge('run', u.runs)}
-                            ${getBadge('vol', u.vols)}
-                        </div>
+                        <div class="stats-row">${rBadge} ${vBadge}</div>
                     </div>
                     <div style="text-align:right">
                         <div style="font-weight:900; color:#E6564C">${u.vols}</div>
-                        <div style="font-size:10px; color:#999">Vols</div>
+                        <div style="font-size:10px; color:#999">волонтерств</div>
                     </div>
                 `;
                 container.appendChild(item);
             });
-        } catch (e) { container.innerHTML = 'Ошибка'; }
+        } catch (e) { container.innerHTML = 'Ошибка загрузки'; }
     }
 
     async function loadQueue() {
