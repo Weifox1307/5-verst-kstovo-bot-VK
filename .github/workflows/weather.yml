@@ -2,8 +2,14 @@ name: VK Widget and Weather
 
 on:
   schedule:
-    - cron: '0 * * * *' # Каждый час (например, 10:00, 11:00...)
+    - cron: '0 * * * *' # Каждый час
   workflow_dispatch:
+    inputs:
+      force_weather:
+        description: 'Отправить погоду принудительно?'
+        required: true
+        default: 'false'
+        type: boolean
 
 jobs:
   run_bot:
@@ -18,4 +24,5 @@ jobs:
         env:
           VK_TOKEN: ${{ secrets.VK_TOKEN }}
           VK_CHAT_IDS: ${{ secrets.VK_CHAT_IDS }}
+          FORCE_WEATHER: ${{ github.event.inputs.force_weather }}
         run: python bot.py
