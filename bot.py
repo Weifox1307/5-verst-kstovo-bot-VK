@@ -1,107 +1,104 @@
-import os, requests, random, sys, json
+import os
+import requests
+import random
+import sys
 from datetime import datetime, timedelta, timezone
 
-# --- НАСТРОЙКИ ---
+# --- НАСТРОЙКИ (Secrets) ---
 VK_TOKEN = os.getenv('VK_TOKEN')
 VK_CHAT_IDS = os.getenv('VK_CHAT_IDS', '')
 FORCE_WEATHER = os.getenv('FORCE_WEATHER', 'false').lower() == 'true'
 
-# Координаты и ID
-LAT, LON = 56.1611, 44.2182
-VK_APP_ID = "54498352" # ID твоего Mini App Кстово
+# Координаты парка Юбилейный (Кстово)
+LAT = 56.1611
+LON = 44.2182
 
 def get_moscow_now():
+    """Возвращает текущее время в Москве (UTC+3)"""
     return datetime.now(timezone(timedelta(hours=3)))
 
 def get_weather():
+    """Получает прогноз погоды через Open-Meteo API именно на 09:00 субботы"""
     url = f"https://api.open-meteo.com/v1/forecast?latitude={LAT}&longitude={LON}&hourly=temperature_2m,precipitation_probability,weathercode&timezone=Europe%2FMoscow&forecast_days=1"
+    
     try:
-        r = requests.get(url, timeout=10)
-        data = r.json()
+        response = requests.get(url, timeout=10)
+        data = response.json()
+        
+        # Индекс 9 соответствует 09:00 утра
         temp = data['hourly']['temperature_2m'][9]
         prob = data['hourly']['precipitation_probability'][9]
         code = data['hourly']['weathercode'][9]
-        weather_map = {0: "Ясно ☀️", 1: "Ясно 🌤", 2: "Облачно ⛅", 3: "Пасмурно ☁️", 45: "Туман 🌫️", 51: "Морось 🌧️", 61: "Дождь 🌦️", 63: "Дождь ☔", 71: "Снег ❄️", 73: "Снегопад 🌨️", 80: "Ливень ⛈️"}
+
+        weather_map = {
+            0: "Ясно ☀️", 1: "Преимущественно ясно 🌤", 2: "Переменная облачность ⛅", 3: "Пасмурно ☁️",
+            45: "Туман 🌫️", 51: "Морось 🌧️", 61: "Небольшой дождь 🌦️", 63: "Дождь ☔",
+            71: "Небольшой снег ❄️", 73: "Снегопад 🌨️", 80: "Ливневый дождь ⛈️"
+        }
         status = weather_map.get(code, "Облачно ☁️")
-        return f"🌳 ПОГОДА НА СТАРТЕ В 09:00:\n\n🌡 Температура: {temp}°C\n☁ На улице: {status}\n☔ Вероятность осадков: {prob}%\n\nОдевайтесь по погоде и до встречи в Юбилейном! 🧡"
-    except: return None
 
-def update_vk_widget():
-    """Обновляет виджет в группе: Тип 'Tiles' (Плитки) - выглядит дорого и современно"""
-    if not VK_TOKEN: return
-    now = get_moscow_now()
-    
-    # Считаем время до субботы 09:00
-    days_ahead = (5 - now.weekday() + 7) % 7
-    if days_ahead == 0 and now.hour >= 9: days_ahead = 7
-    
-    next_start = now.replace(hour=9, minute=0, second=0, microsecond=0) + timedelta(days=days_ahead)
-    diff = next_start - now
-    
-    d, h, m = diff.days, diff.seconds // 3600, (diff.seconds % 3600) // 60
-    time_str = f"{d}д. {h}ч." if d > 0 else f"{h}ч. {m}м."
-
-    # СТРУКТУРА ВИДЖЕТА (TILES)
-    widget_data = {
-        "title": "5 вёрст Парк Юбилейный • Кстово",
-        "tiles": [
-            {
-                "title": time_str,
-                "descr": "До старта",
-                "url": f"https://vk.com/app{VK_APP_ID}",
-                "link_target": "Успею!"
-            },
-            {
-                "title": "09:00",
-                "descr": "Каждую субботу",
-                "url": "https://yandex.ru/maps/-/CDu6Y6Z-", # Ссылка на точку сбора в Юбилейном
-                "link_target": "На карту"
-            },
-            {
-                "title": "Запись",
-                "descr": "Нужны волонтеры",
-                "url": f"https://vk.com/app{VK_APP_ID}",
-                "link_target": "Выбрать роль"
-            }
-        ]
-    }
-
-    url = "https://api.vk.com/method/appWidgets.update"
-    payload = {
-        "access_token": VK_TOKEN,
-        "type": "tiles", # МЕНЯЕМ ТИП НА ПЛИТКИ
-        "code": f"return {json.dumps(widget_data, ensure_ascii=False)};",
-        "v": "5.131"
-    }
-    
-    try:
-        r = requests.post(url, data=payload).json()
-        if "error" in r:
-            print(f"Widget Error: {r['error']['error_msg']}")
-        else:
-            print("Премиум-виджет успешно обновлен!")
+        return (
+            f"🌳 ПОГОДА НА СТАРТЕ В 09:00:\n\n"
+            f"🌡 Температура: {temp}°C\n"
+            f"☁ На улице: {status}\n"
+            f"☔ Вероятность осадков: {prob}%\n\n"
+            f"Одевайтесь по погоде и до встречи в Юбилейном! 🧡"
+        )
     except Exception as e:
-        print(f"Widget Error: {e}")
+        print(f"Ошибка получения погоды: {e}")
+        return None
 
 def send_to_vk(peer_id, text):
+    """Универсальная отправка: в чат или на стену группы"""
     if not text: return
-    url = "https://api.vk.com/method/wall.post" if peer_id < 0 else "https://api.vk.com/method/messages.send"
-    params = {"access_token": VK_TOKEN, "v": "5.131", "message": text}
-    if peer_id < 0: params["owner_id"] = peer_id
-    else: params["peer_id"] = peer_id; params["random_id"] = random.randint(1, 2**31)
     
-    try: requests.post(url, data=params, timeout=10)
-    except: pass
+    if peer_id < 0:
+        # ЭТО КАНАЛ (ГРУППА) - делаем пост на стену
+        url = "https://api.vk.com/method/wall.post"
+        params = {
+            "access_token": VK_TOKEN,
+            "owner_id": peer_id,
+            "message": text,
+            "from_group": 1,
+            "v": "5.131"
+        }
+    else:
+        # ЭТО ЧАТ - шлем сообщение
+        url = "https://api.vk.com/method/messages.send"
+        params = {
+            "access_token": VK_TOKEN,
+            "peer_id": peer_id,
+            "message": text,
+            "random_id": random.randint(1, 2**31),
+            "v": "5.131"
+        }
+
+    try:
+        res = requests.post(url, data=params, timeout=10).json()
+        if "error" in res:
+            print(f"Ошибка ВК ({peer_id}): {res['error']['error_msg']}")
+        else:
+            print(f"Успешно отправлено: {peer_id}")
+    except Exception as e:
+        print(f"Ошибка сети для {peer_id}: {e}")
 
 if __name__ == "__main__":
-    if not VK_TOKEN: sys.exit(1)
-    
-    update_vk_widget()
-    
+    if not VK_TOKEN:
+        print("Ошибка: VK_TOKEN не найден!")
+        sys.exit(1)
+
     now = get_moscow_now()
+    
+    # Запуск только если суббота 07:00 МСК или включен FORCE_WEATHER
     if (now.weekday() == 5 and now.hour == 7) or FORCE_WEATHER:
-        try:
+        print(f"Запуск рассылки... (Force: {FORCE_WEATHER})")
+        weather_text = get_weather()
+        
+        if weather_text and VK_CHAT_IDS:
             ids = [int(i.strip()) for i in VK_CHAT_IDS.split(',') if i.strip()]
-            weather = get_weather()
-            for chat in ids: send_to_vk(chat, weather)
-        except: pass
+            for chat_id in ids:
+                send_to_vk(chat_id, weather_text)
+        else:
+            print("Рассылка отменена: нет текста погоды или списка чатов.")
+    else:
+        print(f"Сегодня не суббота утро (сейчас {now.strftime('%A %H:%M')}). Спим.")
