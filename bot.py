@@ -54,8 +54,8 @@ def update_vk_widget():
 
     widget_data = {
         "title": "До следующего старта:",
-        "text": f"⏳ Осталось: {time_text}\n\nЖдем тебя в субботу в 08:45 в парке Юбилейный! 🌳",
-        "descr": "Место встречи: у главной сцены"
+        "text": f"⏳ Осталось: {time_text}\n\nЖдем тебя в субботу в 08:40 в парке Юбилейный! 🌳",
+        "descr": "Место встречи: центр парка Юбилейный"
     }
 
     url = "https://api.vk.com/method/appWidgets.update"
