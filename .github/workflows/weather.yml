@@ -1,12 +1,12 @@
-name: Saturday Weather Report
+name: VK Widget and Weather
 
 on:
   schedule:
-    - cron: '0 4 * * 6'
+    - cron: '0 * * * *' # Каждый час (например, 10:00, 11:00...)
   workflow_dispatch:
 
 jobs:
-  send_report:
+  run_bot:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,7 +14,7 @@ jobs:
         with:
           python-version: '3.9'
       - run: pip install requests
-      - name: Run weather bot
+      - name: Run Bot
         env:
           VK_TOKEN: ${{ secrets.VK_TOKEN }}
           VK_CHAT_IDS: ${{ secrets.VK_CHAT_IDS }}
