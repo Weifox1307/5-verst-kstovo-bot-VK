@@ -2,15 +2,37 @@ name: Kstovo Auto Bot
 
 on:
   schedule:
-    - cron: '0 * * * *' # Запуск каждый час
+    - cron: '0 * * * *' # Запуск каждый час для автоматики
   workflow_dispatch:
+    inputs:
+      run_weather:
+        description: 'Запустить прогноз погоды?'
+        type: boolean
+        default: false
+      run_birthdays:
+        description: 'Проверить дни рождения?'
+        type: boolean
+        default: false
+      run_reminders:
+        description: 'Отправить напоминалки?'
+        type: boolean
+        default: false
+      run_report:
+        description: 'Отправить отчет по участникам?'
+        type: boolean
+        default: false
+      run_debug_ids:
+        description: 'ПОКАЗАТЬ ВСЕ ID ЧАТОВ (Диагностика)'
+        type: boolean
+        default: false
 
 jobs:
   run_tasks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
           python-version: '3.9'
       - run: pip install requests beautifulsoup4
@@ -18,4 +40,10 @@ jobs:
         env:
           VK_TOKEN: ${{ secrets.VK_TOKEN }}
           VK_CHAT_IDS: ${{ secrets.VK_CHAT_IDS }}
+          # Пробрасываем ручные команды
+          MANUAL_WEATHER: ${{ github.event.inputs.run_weather }}
+          MANUAL_BIRTHDAYS: ${{ github.event.inputs.run_birthdays }}
+          MANUAL_REMINDERS: ${{ github.event.inputs.run_reminders }}
+          MANUAL_REPORT: ${{ github.event.inputs.run_report }}
+          MANUAL_DEBUG: ${{ github.event.inputs.run_debug_ids }}
         run: python bot.py
