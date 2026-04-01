@@ -1,29 +1,21 @@
-name: Saturday Weather Report
+name: Kstovo Auto Bot
 
 on:
   schedule:
-    # 07:00 по МСК (04:00 UTC) каждую субботу
-    - cron: '0 4 * * 6'
+    - cron: '0 * * * *' # Запуск каждый час
   workflow_dispatch:
-    inputs:
-      force_weather:
-        description: 'Отправить погоду принудительно?'
-        required: true
-        default: false
-        type: boolean
 
 jobs:
-  send_report:
+  run_tasks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-      - run: pip install requests
-      - name: Run weather bot
+      - run: pip install requests beautifulsoup4
+      - name: Run Bot
         env:
           VK_TOKEN: ${{ secrets.VK_TOKEN }}
           VK_CHAT_IDS: ${{ secrets.VK_CHAT_IDS }}
-          FORCE_WEATHER: ${{ github.event.inputs.force_weather }}
         run: python bot.py
