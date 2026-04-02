@@ -101,7 +101,7 @@ def send_reminders():
             "📜 Правила: https://vk.com/@5verstkstovoyubileyniy-pravila-5-verst\n\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
             "📱 Приложение 5 вёрст:\n"
-            "🤖 [Android] — Скоро в RuStore!\n\n"
+            "🤖 [Android] — https://www.rustore.ru/catalog/app/com.example.a5verst\n\n"
             "Ваша помощь делает 5 вёрст возможными! ❤️"
         )
         send_vk(FLUD_CHAT_ID, vol_text)
