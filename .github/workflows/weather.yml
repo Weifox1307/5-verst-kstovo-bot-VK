@@ -2,7 +2,7 @@ name: Kstovo Auto Bot
 
 on:
   schedule:
-    - cron: '0 * * * *' # Запуск каждый час для автоматики
+    - cron: '5 * * * *' # Запуск в 5 минут каждого часа
   workflow_dispatch:
     inputs:
       run_weather:
@@ -26,24 +26,46 @@ on:
         type: boolean
         default: false
 
+# Разрешаем GitHub Actions изменять файлы в репозитории
+permissions:
+  contents: write
+
 jobs:
   run_tasks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Нужно для корректного пуша изменений
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-      - run: pip install requests beautifulsoup4
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
       - name: Run Bot
         env:
           VK_TOKEN: ${{ secrets.VK_TOKEN }}
           VK_CHAT_IDS: ${{ secrets.VK_CHAT_IDS }}
-          # Пробрасываем ручные команды
+          NRMS_USERNAME: ${{ secrets.NRMS_USERNAME }}
+          NRMS_PASSWORD: ${{ secrets.NRMS_PASSWORD }}
           MANUAL_WEATHER: ${{ github.event.inputs.run_weather }}
           MANUAL_BIRTHDAYS: ${{ github.event.inputs.run_birthdays }}
           MANUAL_REMINDERS: ${{ github.event.inputs.run_reminders }}
           MANUAL_REPORT: ${{ github.event.inputs.run_report }}
           MANUAL_DEBUG: ${{ github.event.inputs.run_debug_ids }}
         run: python bot.py
+
+      # Сохраняем файл памяти обратно в GitHub, чтобы бот не дублировал отчеты
+      - name: Save state
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -f last_results_sent.txt ]; then
+            git add last_results_sent.txt
+            git commit -m "Update results log [skip ci]" || echo "No changes to commit"
+            git push
+          fi
