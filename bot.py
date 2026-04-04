@@ -62,9 +62,12 @@ def get_latest_results(is_manual=False):
     offset = (now.weekday() - 5) % 7
     last_sat = (now - timedelta(days=offset)).strftime("%d.%m.%Y")
     
+    # ПРОВЕРКА: Если не ручной запуск, смотрим лог-файл
     if not is_manual and os.path.exists(LOG_RESULTS):
         with open(LOG_RESULTS, "r") as f:
-            if f.read().strip() == last_sat: return None
+            if f.read().strip() == last_sat:
+                print(f"Отчет за {last_sat} уже был отправлен.")
+                return None
 
     url = f"https://5verst.ru/kstovoyubileyniy/results/{last_sat}/"
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
@@ -178,6 +181,8 @@ def send_reminders():
 if __name__ == "__main__":
     if not VK_TOKEN: sys.exit(1)
     now = get_moscow_now()
+    
+    # --- РУЧНОЙ ЗАПУСК ---
     if any(MANUAL.values()):
         if MANUAL["debug"]:
             res = get_latest_results(is_manual=True)
@@ -186,12 +191,22 @@ if __name__ == "__main__":
         if MANUAL["report"]:
             res = requests.get("https://api.vk.com/method/groups.getById", params={"group_id": VK_GROUP_ID, "fields": "members_count", "access_token": VK_TOKEN, "v": "5.131"}).json()
             send_vk(ORGS_CHAT_ID, f"📊 Участников: {res['response'][0]['members_count']}")
+            
+    # --- АВТОМАТИЧЕСКИЙ ЗАПУСК ---
     else:
+        # Погода: Сб, 7:00
         if now.weekday() == 5 and now.hour == 7:
-            # Тут вставь свою функцию погоды
-            pass
-        if now.weekday() == 5 and now.hour in [12, 13, 14]:
+            pass 
+            
+        # ОТЧЕТ: Суббота, 13:00. В другие часы этот блок срабатывать не будет.
+        if now.weekday() == 5 and now.hour == 13:
             res = get_latest_results()
             if res: send_vk(FLUD_CHAT_ID, res)
-        if now.hour == 9: check_birthdays()
-        if now.hour in [10, 19, 20]: send_reminders()
+            
+        # Дни рождения: Каждый день, 9:00
+        if now.hour == 9: 
+            check_birthdays()
+            
+        # Напоминалки: В указанные часы
+        if now.hour in [10, 19, 20]: 
+            send_reminders()
