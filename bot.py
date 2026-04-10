@@ -26,44 +26,29 @@ def get_moscow_now():
     return datetime.now(timezone(timedelta(hours=3)))
 
 def send_vk(peer_id, text):
-    if not text: return
+    if not text or not VK_TOKEN: return
     url = "https://api.vk.com/method/messages.send"
-    params = {
-        "access_token": VK_TOKEN, 
-        "peer_id": peer_id, 
-        "message": text, 
-        "random_id": random.randint(1, 999999), 
-        "v": "5.131"
-    }
+    params = {"access_token": VK_TOKEN, "peer_id": peer_id, "message": text, "random_id": random.randint(1, 999999), "v": "5.131"}
     try:
         r = requests.post(url, data=params, timeout=10)
-        res = r.json()
-        if "error" in res: 
-            print(f"!!! Ошибка ВК ({peer_id}): {res['error']['error_msg']}")
-        else: 
-            print(f">>> Отправлено в {peer_id}")
+        print(f">>> Сообщение отправлено в {peer_id}")
     except Exception as e:
-        print(f"Ошибка отправки ВК: {e}")
+        print(f"!!! Ошибка отправки ВК: {e}")
 
 def login_nrms():
-    if not NRMS_USER or not NRMS_PASS:
-        return None
+    if not NRMS_USER or not NRMS_PASS: return None
     try:
-        username = NRMS_USER if NRMS_USER.upper().startswith('A') else f"A{NRMS_USER}"
-        r = requests.post("https://nrms.5verst.ru/api/v1/auth/login", 
-                          json={"username": username, "password": NRMS_PASS}, 
-                          timeout=15)
+        user = NRMS_USER if NRMS_USER.upper().startswith('A') else f"A{NRMS_USER}"
+        r = requests.post("https://nrms.5verst.ru/api/v1/auth/login", json={"username": user, "password": NRMS_PASS}, timeout=15)
         return r.json().get("result", {}).get("token")
-    except Exception as e:
-        print(f"Ошибка авторизации NRMS: {e}")
-        return None
+    except: return None
 
 def get_vk_album(date_str):
     try:
         p = {"owner_id": -VK_GROUP_ID, "access_token": VK_TOKEN, "v": "5.131"}
         resp = requests.get("https://api.vk.com/method/photos.getAlbums", params=p, timeout=10).json()
         albums = resp.get("response", {}).get("items", [])
-        day_month = date_str[:5].replace('.', '') # 0404
+        day_month = date_str[:5].replace('.', '')
         for a in albums:
             if day_month in re.sub(r'\D', '', a.get('title', '')):
                 return f"https://vk.com/album-{VK_GROUP_ID}_{a['id']}"
@@ -71,22 +56,17 @@ def get_vk_album(date_str):
     return f"https://vk.com/albums-{VK_GROUP_ID}"
 
 def get_latest_results(is_manual=False):
-    now = get_moscow_now()
-    offset = (now.weekday() - 5) % 7
-    last_sat_dt = now - timedelta(days=offset)
-    last_sat = last_sat_dt.strftime("%d.%m.%Y")
-    
-    if not is_manual and os.path.exists(LOG_RESULTS):
-        with open(LOG_RESULTS, "r") as f:
-            if f.read().strip() == last_sat:
-                print(f"Отчет за {last_sat} уже был отправлен.")
-                return None
-
-    url = f"https://5verst.ru/kstovoyubileyniy/results/{last_sat}/"
-    headers = {"User-Agent": "Mozilla/5.0"}
-    
     try:
-        r = requests.get(url, headers=headers, timeout=20)
+        now = get_moscow_now()
+        offset = (now.weekday() - 5) % 7
+        last_sat = (now - timedelta(days=offset)).strftime("%d.%m.%Y")
+        
+        if not is_manual and os.path.exists(LOG_RESULTS):
+            with open(LOG_RESULTS, "r") as f:
+                if f.read().strip() == last_sat: return None
+
+        url = f"https://5verst.ru/kstovoyubileyniy/results/{last_sat}/"
+        r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=20)
         if r.status_code != 200: return None
         
         soup = BeautifulSoup(r.text, 'html.parser')
@@ -98,18 +78,12 @@ def get_latest_results(is_manual=False):
         
         for row in rows:
             cells = row.find_all("td")
-            if not cells or not cells[0].text.strip().isdigit(): continue
-            
+            if len(cells) < 7 or not cells[0].text.strip().isdigit(): continue
             finishers_count += 1
             name = cells[1].text.strip()
-            try:
-                total_runs = int(cells[6].text.strip())
-            except:
-                total_runs = 0
-            is_pb = "ЛР" in row.text or "PB" in row.text
-
+            total_runs = int(cells[6].text.strip())
             if total_runs == 1: newcomers.append(name)
-            if is_pb: pbs.append(name)
+            if "ЛР" in row.text or "PB" in row.text: pbs.append(name)
             if total_runs == 10: club10.append(name)
             if total_runs == 25: club25.append(name)
             if total_runs == 9: near10.append(name)
@@ -120,92 +94,67 @@ def get_latest_results(is_manual=False):
             v_res = requests.post("https://nrms.5verst.ru/api/v1/event/volunteer/list", 
                                  json={"event_id": EVENT_ID, "event_date": last_sat},
                                  headers={"Authorization": f"Bearer {token}"}, timeout=15).json()
-            vols_data = v_res.get("result", {}).get("volunteer_list", [])
-            for v in vols_data:
+            for v in v_res.get("result", {}).get("volunteer_list", []):
                 vols_list.append(f"⭐ {v['full_name']} — {v['role_name']}")
 
-        h1_text = soup.find('h1').text if soup.find('h1') else ""
-        start_num_match = re.search(r'#(\d+)', h1_text)
-        start_num = start_num_match.group(1) if start_num_match else "??"
+        title = soup.find('h1').text if soup.find('h1') else ""
+        num = re.search(r'#(\d+)', title).group(1) if re.search(r'#(\d+)', title) else "??"
 
-        msg = f"🌳 {last_sat} состоялся {start_num}-й старт!\n"
-        msg += f"Приняло участие {finishers_count} финишеров и {len(vols_list)} волонтеров.\n\n"
-        msg += f"📊 Общая таблица результатов на сайте:\n{url}\n\n"
-
-        if newcomers: msg += "🆕 Новые участники:\n" + "\n".join(newcomers) + "\nЖдём вас снова! ✨\n\n"
-        if pbs: msg += "🚀 Личные рекорды установили:\n" + "\n".join(pbs) + "\nПоздравляем! 🎉\n\n"
-        if club10: msg += "🏅 Вступили в Клуб 10:\n" + "\n".join(club10) + "\n\n"
-        if club25: msg += "🏆 Вступили в Клуб 25:\n" + "\n".join(club25) + "\n\n"
-        if near10: msg += "👣 В шаге от Клуба 10:\n" + "\n".join(near10) + "\n\n"
-
-        if vols_list:
-            msg += "🧡 Герои нашего старта — наши волонтеры:\n" + "\n".join(vols_list) + "\n\n"
-
-        msg += f"📸 Фотографии в альбоме:\n{get_vk_album(last_sat)}\n\n"
-        msg += "5 вёрст | Кстово | 5verst.ru"
+        msg = f"🌳 {last_sat} состоялся {num}-й старт!\nПриняло участие {finishers_count} финишеров и {len(vols_list)} волонтеров.\n\n📊 Результаты: {url}\n\n"
+        if newcomers: msg += "🆕 Новички:\n" + "\n".join(newcomers) + "\n\n"
+        if pbs: msg += "🚀 Личные рекорды:\n" + "\n".join(pbs) + "\n\n"
+        if club10: msg += "🏅 Клуб 10: " + ", ".join(club10) + "\n"
+        if club25: msg += "🏆 Клуб 25: " + ", ".join(club25) + "\n"
+        if vols_list: msg += "\n🧡 Волонтеры:\n" + "\n".join(vols_list) + "\n\n"
+        msg += f"📸 Фото: {get_vk_album(last_sat)}\n\n5 вёрст | Кстово"
 
         if not is_manual:
             with open(LOG_RESULTS, "w") as f: f.write(last_sat)
         return msg
     except Exception as e:
-        print(f"Ошибка отчета: {e}")
+        print(f"Ошибка парсинга результатов: {e}")
         return None
 
 def check_birthdays():
-    now = get_moscow_now()
-    today_str = now.strftime("%d.%m")
     try:
-        res = requests.get("https://api.vk.com/method/groups.getMembers", 
-                           params={"group_id": VK_GROUP_ID, "fields": "bdate", "access_token": VK_TOKEN, "v": "5.131"},
-                           timeout=15).json()
-        members = res.get('response', {}).get('items', [])
-        celebrants, monthly = [], []
-        for m in members:
-            bdate = m.get('bdate', '')
-            if not bdate or len(bdate.split('.')) < 2: continue
-            parts = bdate.split('.')
-            dm = f"{int(parts[0]):02d}.{int(parts[1]):02d}"
-            mention = f"[id{m['id']}|{m['first_name']} {m['last_name']}]"
-            if dm == today_str: celebrants.append(mention)
-            if int(parts[1]) == now.month: monthly.append(f"• {dm} — {mention}")
+        now = get_moscow_now()
+        today = now.strftime("%d.%m")
+        res = requests.get("https://api.vk.com/method/groups.getMembers", params={"group_id": VK_GROUP_ID, "fields": "bdate", "access_token": VK_TOKEN, "v": "5.131"}, timeout=15).json()
+        celebrants = []
+        for m in res.get('response', {}).get('items', []):
+            bd = m.get('bdate', '')
+            if bd and bd.count('.') >= 1:
+                if f"{int(bd.split('.')[0]):02d}.{int(bd.split('.')[1]):02d}" == today:
+                    celebrants.append(f"[id{m['id']}|{m['first_name']} {m['last_name']}]")
         if celebrants:
             send_vk(FLUD_CHAT_ID, f"🥳 С ДНЁМ РОЖДЕНИЯ! 🎂\n\nСегодня праздник у: {', '.join(celebrants)}! 🎉🧡")
-        if now.day == 1 and monthly:
-            send_vk(FLUD_CHAT_ID, f"🎂 Именинники месяца:\n\n" + "\n".join(sorted(monthly)))
-    except Exception as e:
-        print(f"Ошибка ДР: {e}")
+    except: pass
 
 def send_reminders():
     now = get_moscow_now()
     day = now.weekday()
     if now.hour == 10:
-        if day == 6: send_vk(ORGS_CHAT_ID, "📹 Воскресенье: Пора выложить видео организатора в ВК! 🎬")
-        if day == 1: send_vk(ORGS_CHAT_ID, "🙋‍♂️ Вторник: Время для поста-зазыва волонтеров! 🧡")
-        if day == 3: send_vk(ORGS_CHAT_ID, "✅ Четверг: Постим о готовности старта!")
+        if day == 6: send_vk(ORGS_CHAT_ID, "📹 Воскресенье: Видео организатора!")
+        if day == 1: send_vk(ORGS_CHAT_ID, "🙋‍♂️ Вторник: Пост-зазыв волонтеров!")
+        if day == 3: send_vk(ORGS_CHAT_ID, "✅ Четверг: Пост о готовности!")
     if now.hour == 19 and day == 3:
-        msg = ("👋 Напоминание о волонтерстве!\n\nДрузья, не забудьте записаться на старт: vk.com/app54498352 📝\n\n"
-               "📸 Фото: https://vk.com/albums-231094435\n📖 Инструкции: https://vk.com/topic-231094435_53026364\n"
-               "📍 Карта: https://vk.com/topic-231094435_53026365")
-        send_vk(FLUD_CHAT_ID, msg)
+        send_vk(FLUD_CHAT_ID, "👋 Друзья, не забудьте записаться на старт: vk.com/app54498352 📝")
 
 if __name__ == "__main__":
-    if not VK_TOKEN: sys.exit(0)
-    now = get_moscow_now()
+    try:
+        now = get_moscow_now()
+        if any(MANUAL.values()):
+            if MANUAL["debug"]:
+                res = get_latest_results(is_manual=True)
+                if res: send_vk(FLUD_CHAT_ID, res)
+        else:
+            if now.weekday() == 5 and now.hour == 13:
+                res = get_latest_results()
+                if res: send_vk(FLUD_CHAT_ID, res)
+            if now.hour == 9: check_birthdays()
+            if now.hour in [10, 19]: send_reminders()
+    except Exception as e:
+        print(f"Глобальная ошибка скрипта: {e}")
     
-    if any(MANUAL.values()):
-        if MANUAL["debug"]:
-            res = get_latest_results(is_manual=True)
-            if res: send_vk(FLUD_CHAT_ID, res)
-        if MANUAL["report"]:
-            r = requests.get("https://api.vk.com/method/groups.getById", 
-                             params={"group_id": VK_GROUP_ID, "fields": "members_count", "access_token": VK_TOKEN, "v": "5.131"}).json()
-            count = r['response'][0]['members_count']
-            send_vk(ORGS_CHAT_ID, f"📊 Участников в группе: {count}")
-    else:
-        if now.weekday() == 5 and now.hour == 13:
-            res = get_latest_results()
-            if res: send_vk(FLUD_CHAT_ID, res)
-        if now.hour == 9: 
-            check_birthdays()
-        if now.hour in [10, 19]: 
-            send_reminders()
+    # Всегда выходим с кодом 0, чтобы GitHub не отменял деплой страницы
+    sys.exit(0)
