@@ -25,6 +25,19 @@
         button#submit_btn { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px; box-shadow: 0 4px 12px rgba(230, 86, 76, 0.2); }
         button:disabled { background: #b0b0b0; box-shadow: none; }
 
+        .btn-delete {
+        background: #ffeded;
+        color: #e6564c;
+        border: none;
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 11px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-left: 10px;
+        }
+        .vol-info-group { display: flex; align-items: center; }
+
         .vol-card { background: white; padding: 12px 15px; border-radius: 12px; border: 1px solid #ebedef; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
         .vol-role-badge { background: #f0f2ff; color: var(--primary); padding: 4px 8px; border-radius: 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
         .vol-name-txt { font-weight: 600; font-size: 14px; color: #333; }
@@ -202,7 +215,7 @@
 
 <script>
     vkBridge.send("VKWebAppInit");
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-KOsg8DsUkqLeddcgvhPs8SvdaTeLH2eMHOdYCtbn5o1ei6gfIVauHxb2-3AeVUEcuQ/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxedRblUv-CAPpfluc8ToO5F30KS8VvAd5kqTcMT6fqjaCg9JtbX14_om9GwMQVvkgYJQ/exec';
     const GITHUB_IMG_BASE = 'https://raw.githubusercontent.com/Weifox1307/5-verst-kstovo-bot-VK/main/';
 
     let selectedVolunteer = null; let vkUser = null;
@@ -362,15 +375,73 @@
             const data = await res.json();
             const container = document.getElementById('queue_container');
             container.innerHTML = '';
-            if(data.length === 0) container.innerHTML = '<div style="text-align:center; color:#999; padding:20px;">Пока никто не записался</div>';
+            
+            if(data.length === 0) {
+                container.innerHTML = '<div style="text-align:center; color:#999; padding:20px;">Пока никто не записался</div>';
+                return;
+            }
+
             data.reverse().forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'vol-card';
-                div.innerHTML = `<span class="vol-name-txt">${item.full_name}</span><span class="vol-role-badge">${item.role_name}</span>`;
+                
+                // Проверяем, является ли текущий пользователь этим волонтером
+                const isMe = vkUser && (item.vk_id == vkUser.id);
+                
+                let deleteBtn = isMe ? `<button class="btn-delete" onclick="deleteEntry('${item.verst_id}', '${item.role_id}')">Отменить</button>` : '';
+                
+                div.innerHTML = `
+                    <div class="vol-info-group">
+                        <span class="vol-name-txt">${item.full_name}</span>
+                        ${deleteBtn}
+                    </div>
+                    <span class="vol-role-badge">${item.role_name}</span>
+                `;
                 container.appendChild(div);
             });
-        } catch(e) {}
+        } catch(e) {
+            console.error("Ошибка загрузки очереди:", e);
+        }
     }
+
+    async function deleteEntry(verstId, roleId) {
+        if (!confirm("Вы уверены, что хотите отменить свою запись?")) return;
+        
+        // Показываем лоадер вместо кнопки или просто блокируем интерфейс
+        const btn = event.target;
+        btn.innerText = "...";
+        btn.disabled = true;
+
+        try {
+            const payload = { 
+                action: "delete", 
+                vk_id: vkUser.id, 
+                verst_id: verstId, 
+                role_id: roleId 
+            };
+            
+            // Мы используем POST для удаления, чтобы передать JSON
+            const response = await fetch(SCRIPT_URL, { 
+                method: 'POST', 
+                mode: 'no-cors', // Важно для GAS
+                body: JSON.stringify(payload) 
+            });
+            
+            // Так как mode: 'no-cors', мы не получим тело ответа, 
+            // поэтому просто ждем секунду и обновляем
+            setTimeout(() => {
+                alert("Запись отменена");
+                location.reload();
+            }, 1000);
+
+        } catch (e) {
+            alert("Ошибка при удалении");
+            btn.innerText = "Отменить";
+            btn.disabled = false;
+        }
+    }
+
+    // Вызываем загрузку очереди при старте
     loadQueue();
 </script>
 </body>
