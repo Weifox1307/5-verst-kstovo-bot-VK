@@ -283,9 +283,16 @@
     function switchTab(t) {
         document.getElementById('section_rec').style.display = t === 'rec' ? 'block' : 'none';
         document.getElementById('section_rate').style.display = t === 'rate' ? 'block' : 'none';
+        document.getElementById('section_org').style.display = t === 'org' ? 'block' : 'none';
+
         document.getElementById('tab_rec').classList.toggle('active', t === 'rec');
         document.getElementById('tab_rate').classList.toggle('active', t === 'rate');
+        document.getElementById('tab_org').classList.toggle('active', t === 'org');
+
         if (t === 'rate') loadRating();
+        if (t === 'org') {
+            setTimeout(loadOrgPanel, 150);   // небольшая задержка, чтобы всё прогрузилось
+        }
     }
 
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
@@ -312,32 +319,6 @@
     }
 
     function closeQR() { closeModal('qr_modal'); }
-
-    async function init() {
-        try {
-            vkUser = await vkBridge.send("VKWebAppGetUserInfo");
-            const res = await fetch(`${SCRIPT_URL}?check_vk_id=${vkUser.id}`);
-            const data = await res.json();
-            if (data.found) {
-                selectedVolunteer = { id: data.verst_id, full_name: data.full_name };
-                document.getElementById('verst_search').value = data.full_name;
-                const welcome = document.getElementById('welcome_back');
-                welcome.style.display = 'block';
-                let badgesHtml = "";
-                if (data.stats) {
-                    const rB = data.stats.run_club ? `<span class="badge ${data.stats.run_club}">${runIcon} ${data.stats.run_club.replace('run','')}</span>` : '';
-                    const vB = data.stats.vol_club ? `<span class="badge ${data.stats.vol_club}">${volIcon} ${data.stats.vol_club.replace('vol','')}</span>` : '';
-                    if (rB || vB) badgesHtml = `<div class="stats-row">${rB} ${vB}</div>`;
-                }
-                welcome.innerHTML = `👋 <b>${vkUser.first_name}</b>, твои данные подставлены!<br>${badgesHtml}<button class="btn-qr" onclick="showQR('${data.verst_id}', '${data.full_name}')">МОЯ КАРТОЧКА УЧАСТНИКА</button>`;
-            }
-            const dRes = await fetch(SCRIPT_URL + "?get_date=1");
-            const dData = await dRes.json();
-            document.getElementById('event_date').innerText = dData.date;
-            await loadQueue();
-            validateForm();
-        } catch (e) { console.error(e); }
-    }
     init();
 
     function toggleFriendVk() {
@@ -644,6 +625,7 @@
     async function init() {
         try {
             vkUser = await vkBridge.send("VKWebAppGetUserInfo");
+            
             const res = await fetch(`${SCRIPT_URL}?check_vk_id=${vkUser.id}`);
             const data = await res.json();
             if (data.found) {
@@ -659,13 +641,20 @@
                 }
                 welcome.innerHTML = `👋 <b>${vkUser.first_name}</b>, твои данные подставлены!<br>${badgesHtml}<button class="btn-qr" onclick="showQR('${data.verst_id}', '${data.full_name}')">МОЯ КАРТОЧКА УЧАСТНИКА</button>`;
             }
+
             const dRes = await fetch(SCRIPT_URL + "?get_date=1");
             const dData = await dRes.json();
             document.getElementById('event_date').innerText = dData.date;
+
             await loadQueue();
             validateForm();
-            await checkOrganizer();        // ← добавлено
-        } catch (e) { console.error(e); }
+
+            // Проверка организатора с задержкой
+            setTimeout(checkOrganizer, 1000);
+
+        } catch (e) { 
+            console.error(e); 
+        }
     }
 </script>
 </body>
