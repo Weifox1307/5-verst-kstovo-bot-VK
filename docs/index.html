@@ -97,6 +97,12 @@
             font-size: 13px;
             cursor: pointer;
         }
+
+        .org-card { background: white; padding: 16px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin: 15px; border: 1px solid #eef0f2; }
+        .thematic { border-left: 5px solid #ff9800; background: #fff8e1 !important; }
+        .org-btn { width: 100%; padding: 14px; margin: 8px 0; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 15px; }
+        .org-register { background: #2B326D; color: white; }
+        .org-delete { background: #feebeb; color: #E6564C; border: 1px solid #ffdada; }
     </style>
 </head>
 <body>
@@ -182,6 +188,7 @@
 <div class="tabs">
     <div id="tab_rec" class="tab active" onclick="switchTab('rec')">ЗАПИСЬ</div>
     <div id="tab_rate" class="tab" onclick="switchTab('rate')">РЕЙТИНГ</div>
+    <div id="tab_org" class="tab" onclick="switchTab('org')" style="display:none;">ОРГ-ПАНЕЛЬ</div>
 </div>
 <div id="section_rec">
     <div class="card">
@@ -254,9 +261,17 @@
         <div id="rating_list">Загрузка рейтинга...</div>
     </div>
 </div>
+
+<!-- ====================== ОРГ-ПАНЕЛЬ ====================== -->
+<div id="section_org" style="display:none">
+    <div class="card">
+        <h2>Орг-панель</h2>
+        <div id="org_dates_list">Загрузка дат...</div>
+    </div>
+</div>
 <script>
     vkBridge.send("VKWebAppInit");
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbye0KJIT8vQa_4A-3viuxPEkJ6ruE0jzcF2deIhpc-u4QSEsftjEegL92_zpiQRQjTTUg/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxHGH4O69G8vWcLuqdkdSti7SUEkTa2aCaGIdNpsdpAiVFlx6DS3Np7TdcYMvTcam8Nkg/exec';
     const GITHUB_IMG_BASE = 'https://raw.githubusercontent.com/Weifox1307/5verst_stankozavod_bot_vk/main/';
     let selectedVolunteer = null;
     let vkUser = null;
@@ -545,6 +560,112 @@
                 container.appendChild(div);
             });
         } catch(e) {}
+    }
+        // ==================== ОРГ-ПАНЕЛЬ ====================
+
+    async function checkOrganizer() {
+        if (!vkUser) return;
+        try {
+            const res = await fetch(`${SCRIPT_URL}?is_organizer=1&vk_id=${vkUser.id}`);
+            const data = await res.json();
+            if (data.is_organizer) {
+                document.getElementById('tab_org').style.display = 'block';
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    async function loadOrgPanel() {
+        const container = document.getElementById('org_dates_list');
+        container.innerHTML = '<div style="padding:30px; text-align:center; color:#999;">Загрузка дат...</div>';
+        
+        try {
+            const res = await fetch(`${SCRIPT_URL}?get_organizers_dates=1`);
+            const data = await res.json();
+            const dates = data.dates || [];
+            
+            let html = '';
+            dates.forEach((date, index) => {
+                const isThematic = (index + 1) % 5 === 0;
+                const themeClass = isThematic ? 'thematic' : '';
+                const themeText = isThematic ? ' 🔥 Тематический старт' : '';
+                
+                html += `
+                    <div class="card ${themeClass}">
+                        <h2 style="margin:8px 0 12px 0;">${date}${themeText}</h2>
+                        <button class="org-btn org-register" onclick="registerAsOrg('${date}')">Записаться как организатор</button>
+                        <button class="org-btn org-delete" onclick="deleteAsOrg('${date}')">Удалить свою запись</button>
+                    </div>`;
+            });
+            
+            container.innerHTML = html || '<div style="padding:20px; color:#999; text-align:center;">Нет доступных дат</div>';
+        } catch(e) {
+            container.innerHTML = '<div style="padding:20px; color:#E6564C; text-align:center;">Ошибка загрузки дат</div>';
+        }
+    }
+
+    async function registerAsOrg(date) {
+        if (!confirm(`Записаться организатором на ${date}?`)) return;
+        try {
+            await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: "register_organizer",
+                    date: date,
+                    vk_id: vkUser.id,
+                    full_name: vkUser.first_name + " " + vkUser.last_name
+                })
+            });
+            alert(`✅ Записано как организатор на ${date}`);
+            loadOrgPanel();
+        } catch(e) {
+            alert("Ошибка при записи");
+        }
+    }
+
+    async function deleteAsOrg(date) {
+        if (!confirm(`Удалить запись организатора на ${date}?`)) return;
+        try {
+            await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: "delete_organizer",
+                    date: date,
+                    vk_id: vkUser.id
+                })
+            });
+            alert(`✅ Запись на ${date} удалена`);
+            loadOrgPanel();
+        } catch(e) {
+            alert("Ошибка при удалении");
+        }
+    }
+
+    // Обновляем init() — добавляем проверку организатора
+    async function init() {
+        try {
+            vkUser = await vkBridge.send("VKWebAppGetUserInfo");
+            const res = await fetch(`${SCRIPT_URL}?check_vk_id=${vkUser.id}`);
+            const data = await res.json();
+            if (data.found) {
+                selectedVolunteer = { id: data.verst_id, full_name: data.full_name };
+                document.getElementById('verst_search').value = data.full_name;
+                const welcome = document.getElementById('welcome_back');
+                welcome.style.display = 'block';
+                let badgesHtml = "";
+                if (data.stats) {
+                    const rB = data.stats.run_club ? `<span class="badge ${data.stats.run_club}">${runIcon} ${data.stats.run_club.replace('run','')}</span>` : '';
+                    const vB = data.stats.vol_club ? `<span class="badge ${data.stats.vol_club}">${volIcon} ${data.stats.vol_club.replace('vol','')}</span>` : '';
+                    if (rB || vB) badgesHtml = `<div class="stats-row">${rB} ${vB}</div>`;
+                }
+                welcome.innerHTML = `👋 <b>${vkUser.first_name}</b>, твои данные подставлены!<br>${badgesHtml}<button class="btn-qr" onclick="showQR('${data.verst_id}', '${data.full_name}')">МОЯ КАРТОЧКА УЧАСТНИКА</button>`;
+            }
+            const dRes = await fetch(SCRIPT_URL + "?get_date=1");
+            const dData = await dRes.json();
+            document.getElementById('event_date').innerText = dData.date;
+            await loadQueue();
+            validateForm();
+            await checkOrganizer();        // ← добавлено
+        } catch (e) { console.error(e); }
     }
 </script>
 </body>
