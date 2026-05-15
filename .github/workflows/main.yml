@@ -28,4 +28,6 @@ jobs:
           # ВОТ ТУТ МЫ ПЕРЕДАЕМ СЕКРЕТЫ В СКРИПТ
           VK_TOKEN: ${{ secrets.VK_TOKEN }}
           PEER_ID: ${{ secrets.PEER_ID }}
+          NRMS_USERNAME: ${{ secrets.NRMS_USERNAME }}
+          NRMS_PASSWORD: ${{ secrets.NRMS_PASSWORD }}
         run: python script.py
