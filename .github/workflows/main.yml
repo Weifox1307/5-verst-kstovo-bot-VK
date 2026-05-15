@@ -4,7 +4,7 @@ on:
   schedule:
     # 10:00 UTC = 13:00 по Москве (каждую субботу)
     - cron: '0 10 * * 6'
-  workflow_dispatch: # Позволяет запускать вручную кнопкой во вкладке Actions
+  workflow_dispatch: # Позволяет запускать вручную
 
 jobs:
   build:
@@ -25,6 +25,7 @@ jobs:
 
       - name: Run script
         env:
+          # ВОТ ТУТ МЫ ПЕРЕДАЕМ СЕКРЕТЫ В СКРИПТ
           VK_TOKEN: ${{ secrets.VK_TOKEN }}
-          GROUP_ID: ${{ secrets.GROUP_ID }}
+          PEER_ID: ${{ secrets.PEER_ID }}
         run: python script.py
