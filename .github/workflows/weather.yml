@@ -1,71 +1,24 @@
-name: Kstovo Auto Bot
+name: Daily Bot (Weather & Birthdays)
 
 on:
   schedule:
-    - cron: '5 * * * *' # Запуск в 5 минут каждого часа
+    # 02:30 UTC — это 05:30 утра по МСК. 
+    # С учетом задержек GitHub, придет как раз к 06:30 - 07:30.
+    - cron: '30 2 * * *' 
   workflow_dispatch:
-    inputs:
-      run_weather:
-        description: 'Запустить прогноз погоды?'
-        type: boolean
-        default: false
-      run_birthdays:
-        description: 'Проверить дни рождения?'
-        type: boolean
-        default: false
-      run_reminders:
-        description: 'Отправить напоминалки?'
-        type: boolean
-        default: false
-      run_report:
-        description: 'Отправить отчет по участникам?'
-        type: boolean
-        default: false
-      run_debug_ids:
-        description: 'ПОКАЗАТЬ ВСЕ ID ЧАТОВ (Диагностика)'
-        type: boolean
-        default: false
-
-# Разрешаем GitHub Actions изменять файлы в репозитории
-permissions:
-  contents: write
 
 jobs:
-  run_tasks:
+  send_report:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5 # Обновил до v5
         with:
-          fetch-depth: 0 # Нужно для корректного пуша изменений
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-
-      - name: Install dependencies
-        run: pip install requests beautifulsoup4
-
-      - name: Run Bot
+          python-version: '3.10'
+      - run: pip install requests
+      - name: Run bot
         env:
           VK_TOKEN: ${{ secrets.VK_TOKEN }}
           VK_CHAT_IDS: ${{ secrets.VK_CHAT_IDS }}
-          NRMS_USERNAME: ${{ secrets.NRMS_USERNAME }}
-          NRMS_PASSWORD: ${{ secrets.NRMS_PASSWORD }}
-          MANUAL_WEATHER: ${{ github.event.inputs.run_weather }}
-          MANUAL_BIRTHDAYS: ${{ github.event.inputs.run_birthdays }}
-          MANUAL_REMINDERS: ${{ github.event.inputs.run_reminders }}
-          MANUAL_REPORT: ${{ github.event.inputs.run_report }}
-          MANUAL_DEBUG: ${{ github.event.inputs.run_debug_ids }}
+          VK_GROUP_ID: ${{ secrets.VK_GROUP_ID }}
         run: python bot.py
-
-      # Сохраняем файл памяти обратно в GitHub, чтобы бот не дублировал отчеты
-      - name: Save state
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          if [ -f last_results_sent.txt ]; then
-            git add last_results_sent.txt
-            git commit -m "Update results log [skip ci]" || echo "No changes to commit"
-            git push
-          fi
