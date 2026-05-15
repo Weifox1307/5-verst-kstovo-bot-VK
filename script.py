@@ -112,18 +112,33 @@ def send_to_vk(message):
     return requests.post(url, params=params).json()
 
 if __name__ == "__main__":
-    # ТЕСТОВАЯ ДАТА 9 МАЯ 2026
-    date_str = "2026-05-09"
-    display_date = "09.05.2026"
+    # Настраиваем московское время
+    tz = pytz.timezone("Europe/Moscow")
+    now = datetime.now(tz)
 
+    # 1. Считаем дату ПРОШЕДШЕЙ или ТЕКУЩЕЙ субботы (для результатов)
+    # Если запустить в субботу после 12:00-13:00, возьмет сегодняшнюю.
+    offset = (now.weekday() - 5) % 7
+    last_sat_dt = now - timedelta(days=offset)
+    
+    date_str = last_sat_dt.strftime("%Y-%m-%d")
+    display_date = last_sat_dt.strftime("%d.%m.%Y")
+
+    # 2. Считаем дату СЛЕДУЮЩЕЙ субботы (для анонса старта)
+    next_sat_dt = last_sat_dt + timedelta(days=7)
+    next_display_date = next_sat_dt.strftime("%d.%m.%Y")
+
+    print(f"Ищем результаты за: {display_date}")
+
+    # 3. Получаем результаты с сайта
     results = get_detailed_results(date_str)
     
-    # Если нашел хоть одного человека, работаем
     if results["count"] > 0:
         api = NRMS_API(NRMS_USER, NRMS_PASS)
         volunteers_text = ""
         organizers = []
         
+        # Пытаемся зайти в NRMS
         if api.login():
             vols_raw = api.get_volunteers(date_str)
             if vols_raw:
@@ -134,6 +149,7 @@ if __name__ == "__main__":
                     if "Организатор" in role: organizers.append(name)
                 volunteers_text = "\n".join(v_list)
         
+        # Собираем сообщение
         msg = [
             f"🌳 5 вёрст Кстово Юбилейный",
             f"🗓 Старт от {display_date}\n━━━━━━━━━━━━━━",
@@ -156,13 +172,12 @@ if __name__ == "__main__":
         if volunteers_text:
             msg.append(f"🍃 Герои нашего старта — волонтеры:\n{volunteers_text}\n")
 
-        msg.append(f"━━━━━━━━━━━━━━\n📅 СЛЕДУЮЩИЙ СТАРТ: 16.05.2026\n⏰ Время: 08:40\nЖдём вас! 🙌")
+        msg.append(f"━━━━━━━━━━━━━━\n📅 СЛЕДУЮЩИЙ СТАРТ: {next_display_date}\n⏰ Время: 08:40\nЖдём вас! 🙌")
         
         final_msg = "\n".join(msg)
         print(final_msg)
         
         if VK_TOKEN and PEER_ID:
-            print("Отправка в ВК...")
-            print(send_to_vk(final_msg))
+            send_to_vk(final_msg)
     else:
-        print("Скрипт не смог собрать данные. Посмотри логи выше.")
+        print(f"Результаты за {display_date} пока не загружены на сайт.")
