@@ -98,18 +98,23 @@ def send_to_vk(message):
 
 if __name__ == "__main__":
     tz = pytz.timezone("Europe/Moscow")
-    now = datetime.now(tz)
+    # Если ты хочешь потестить 2026 год, а на календаре 2024, 
+    # мы можем просто вручную задать дату для теста:
     
-    # Определяем дату прошедшей субботы
-    offset = (now.weekday() - 5) % 7
-    last_sat_dt = now - timedelta(days=offset)
-    date_str = last_sat_dt.strftime("%Y-%m-%d")
-    display_date = last_sat_dt.strftime("%d.%m.%Y")
+    # ВАРИАНТ ДЛЯ ТЕСТА 9 МАЯ 2026:
+    display_date = "09.05.2026"
+    date_str = "2026-05-09"
+    
+    print(f"Запуск теста для даты: {display_date}")
 
     # 1. Получаем результаты с сайта
     results = get_detailed_results(date_str)
     if results["count"] == 0:
-        print(f"Результаты за {display_date} еще не выгружены.")
+        print(f"Результаты за {display_date} не найдены на сайте. Проверь ссылку: {results['url']}")
+        # Если не находит, попробуй за 2024 год для проверки связи:
+        # date_str = "2024-05-11" 
+        # display_date = "11.05.2024"
+        # results = get_detailed_results(date_str)
         exit()
 
     # 2. Получаем волонтеров через NRMS API
@@ -127,9 +132,15 @@ if __name__ == "__main__":
                 v_list.append(f"• {name} — {role}")
                 if "Организатор" in role: organizers.append(name)
             volunteers_text = "\n".join(v_list)
+        else:
+            print("API логин успешен, но список волонтеров пуст.")
+    else:
+        print("Ошибка логина в NRMS. Проверь логин/пароль в Secrets.")
 
     # 3. Собираем текст сообщения
-    next_date, next_time = get_next_start_info()
+    # Для теста следующего старта (после 9 мая это будет 16 мая)
+    next_date = "16.05.2026"
+    next_time = "08:40"
     
     msg = [f"🌳 5 вёрст Кстово Юбилейный"]
     msg.append(f"🗓 Старт от {display_date}\n━━━━━━━━━━━━━━")
