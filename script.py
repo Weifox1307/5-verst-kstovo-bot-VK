@@ -14,66 +14,68 @@ VK_TOKEN = os.getenv("VK_TOKEN")
 NRMS_USER = os.getenv("NRMS_USERNAME")
 NRMS_PASS = os.getenv("NRMS_PASSWORD")
 
+# Список юбилейных чисел
+MILESTONES = [10, 25, 50, 100, 250, 500]
+
 def get_detailed_results(date_str):
-    # Дата приходит в формате 2026-05-09, переводим в 09.05.2026
     url_date = datetime.strptime(date_str, "%Y-%m-%d").strftime("%d.%m.%Y")
     url = f"https://5verst.ru/{LOCATION_ID}/results/{url_date}/"
     
-    # Очень важные заголовки, чтобы сайт думал, что мы человек
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-        "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     }
     
-    res = {"count": 0, "url": url, "new_total": [], "new_location": [], "pbs": []}
+    # Расширяем структуру результата
+    res = {
+        "count": 0, 
+        "url": url, 
+        "new_total": [], 
+        "new_location": [], 
+        "pbs": [],
+        "run_milestones": [] # Для клубов 25, 50...
+    }
     
     try:
-        print(f"Запрос к: {url}")
         r = requests.get(url, headers=headers, timeout=20)
-        print(f"Статус ответа сайта: {r.status_code}")
-        
-        if r.status_code != 200:
-            return res
+        if r.status_code != 200: return res
         
         soup = BeautifulSoup(r.text, 'html.parser')
-        
-        # Ищем таблицу. На 5верст она может быть .results-table или просто .sortable
         table = soup.select_one(".results-table") or soup.select_one("table.sortable") or soup.find("table")
         
         if table:
-            rows = table.find_all('tr')[1:] # Пропускаем шапку
+            rows = table.find_all('tr')[1:] 
             res["count"] = len(rows)
-            print(f"Найдено строк в таблице: {res['count']}")
             
             for row in rows:
                 cols = row.find_all('td')
                 if len(cols) < 9: continue
                 
-                # Имя обычно во второй колонке
                 name = cols[1].get_text(strip=True).split('\n')[0]
                 
-                # Индексы могут меняться, пробуем стандартные (7-Всего, 8-Локация, 9-ЛР)
                 try:
-                    total_runs = cols[7].get_text(strip=True)
-                    loc_runs = cols[8].get_text(strip=True)
+                    total_runs_str = cols[7].get_text(strip=True)
+                    loc_runs_str = cols[8].get_text(strip=True)
                     pb_status = cols[9].get_text(strip=True)
                     
-                    if total_runs == "1": res["new_total"].append(name)
-                    elif loc_runs == "1": res["new_location"].append(name)
-                    if "ЛР" in pb_status: res["pbs"].append(name)
-                except:
+                    total_runs = int(re.sub(r'\D', '', total_runs_str)) if total_runs_str else 0
+                    
+                    # Логика клубов
+                    if total_runs == 1: 
+                        res["new_total"].append(name)
+                    elif loc_runs_str == "1": 
+                        res["new_location"].append(name)
+                    
+                    if total_runs in MILESTONES:
+                        res["run_milestones"].append(f"{name} ({total_runs} стартов)")
+                        
+                    if "ЛР" in pb_status: 
+                        res["pbs"].append(name)
+                except Exception as e:
                     continue
-        else:
-            print("Таблица с результатами не найдена на странице.")
-            
     except Exception as e:
-        print(f"Ошибка при парсинге: {e}")
+        print(f"Ошибка парсинга: {e}")
         
     return res
-
-# Остальные функции (NRMS_API, get_next_start_info, send_to_vk) берем из предыдущего кода...
-# Оставляю их без изменений для экономии места
 
 class NRMS_API:
     def __init__(self, user, pwd):
@@ -112,53 +114,60 @@ def send_to_vk(message):
     return requests.post(url, params=params).json()
 
 if __name__ == "__main__":
-    # Настраиваем московское время
     tz = pytz.timezone("Europe/Moscow")
     now = datetime.now(tz)
 
-    # 1. Считаем дату ПРОШЕДШЕЙ или ТЕКУЩЕЙ субботы (для результатов)
-    # Если запустить в субботу после 12:00-13:00, возьмет сегодняшнюю.
+    # Определяем последнюю субботу
     offset = (now.weekday() - 5) % 7
     last_sat_dt = now - timedelta(days=offset)
     
     date_str = last_sat_dt.strftime("%Y-%m-%d")
     display_date = last_sat_dt.strftime("%d.%m.%Y")
+    next_display_date = (last_sat_dt + timedelta(days=7)).strftime("%d.%m.%Y")
 
-    # 2. Считаем дату СЛЕДУЮЩЕЙ субботы (для анонса старта)
-    next_sat_dt = last_sat_dt + timedelta(days=7)
-    next_display_date = next_sat_dt.strftime("%d.%m.%Y")
+    print(f"Обработка результатов за: {display_date}")
 
-    print(f"Ищем результаты за: {display_date}")
-
-    # 3. Получаем результаты с сайта
     results = get_detailed_results(date_str)
     
     if results["count"] > 0:
         api = NRMS_API(NRMS_USER, NRMS_PASS)
         volunteers_text = ""
+        vol_milestones = []
         organizers = []
         
-        # Пытаемся зайти в NRMS
         if api.login():
             vols_raw = api.get_volunteers(date_str)
             if vols_raw:
                 v_list = []
                 for v in vols_raw:
-                    name, role = v.get("full_name"), v.get("role_name")
+                    name = v.get("full_name")
+                    role = v.get("role_name")
+                    v_count = v.get("volunteering_count", 0)
+                    
                     v_list.append(f"• {name} — {role}")
                     if "Организатор" in role: organizers.append(name)
+                    
+                    # Проверяем волонтерские клубы
+                    if v_count in MILESTONES:
+                        vol_milestones.append(f"{name} ({v_count} волонтерств)")
+                
                 volunteers_text = "\n".join(v_list)
         
         # Собираем сообщение
         msg = [
             f"🌳 5 вёрст Кстово Юбилейный",
-            f"🗓 Старт от {display_date}\n━━━━━━━━━━━━━━",
+            f"🗓 Старт №... от {display_date}\n━━━━━━━━━━━━━━",
             f"🏁 Финишировало участников: {results['count']}",
             f"📊 Протокол: {results['url']}\n"
         ]
         
         if organizers:
             msg.insert(2, f"🔥 Организаторы: {', '.join(set(organizers))}\n")
+
+        # Добавляем КЛУБЫ (Милестоны)
+        all_milestones = results['run_milestones'] + vol_milestones
+        if all_milestones:
+            msg.append(f"🏆 Вступили в юбилейные клубы:\n" + "\n".join(all_milestones) + "\nГордимся вами! 👏\n")
 
         if results['new_total']:
             msg.append(f"🏃‍♂️ Новые участники:\n" + "\n".join(results['new_total']) + "\n")
@@ -180,4 +189,4 @@ if __name__ == "__main__":
         if VK_TOKEN and PEER_ID:
             send_to_vk(final_msg)
     else:
-        print(f"Результаты за {display_date} пока не загружены на сайт.")
+        print(f"Результаты за {display_date} пока не загружены.")
