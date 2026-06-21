@@ -6,20 +6,20 @@
     <title>5 вёрст в парке Юбилейный | Кстово</title>
     <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
     <style>
-        :root { --primary: #2B326D; --accent: #E6564C; --bg: #f5f5f5; }
+        :root { --primary: #2B326D; --accent: #E6564C; --bg: #f5f5f5; --success: #4caf50; }
         body { font-family: -apple-system, system-ui, Helvetica Neue, Roboto, sans-serif; padding: 0; background: var(--bg); color: #333; margin: 0; padding-bottom: 80px; }
-        .tabs { display: flex; background: var(--primary); position: sticky; top: 0; z-index: 1000; padding: 5px; gap: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .tab { flex: 1; text-align: center; padding: 12px; font-weight: bold; color: #fff; opacity: 0.6; cursor: pointer; border-radius: 8px; font-size: 14px; }
+        .tabs { display: flex; background: var(--primary); position: sticky; top: 0; z-index: 1000; padding: 5px; gap: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow-x: auto; }
+        .tab { flex: 1; text-align: center; padding: 12px; font-weight: bold; color: #fff; opacity: 0.6; cursor: pointer; border-radius: 8px; font-size: 13px; white-space: nowrap; min-width: 90px; }
         .tab.active { opacity: 1; background: rgba(255,255,255,0.15); }
         .card { background: white; padding: 16px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin: 15px; border: 1px solid #eef0f2; }
         h2 { color: var(--primary); font-size: 18px; margin: 0 0 12px 0; border-bottom: 2px solid #f0f2ff; padding-bottom: 8px; }
         .date-badge { color: var(--accent); }
         .welcome-msg { background: #f0f2ff; padding: 12px; border-radius: 12px; font-size: 13px; margin-bottom: 15px; color: var(--primary); display: none; border: 1px solid #dce1e6; line-height: 1.6; }
         .btn-qr { background: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 10px; font-size: 13px; font-weight: bold; margin-top: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; box-sizing: border-box; }
+        .btn-sync { background: var(--success); color: white; border: none; padding: 10px 15px; border-radius: 10px; font-size: 13px; font-weight: bold; margin-top: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; box-sizing: border-box; }
         label { font-size: 11px; color: #999; margin-left: 4px; font-weight: 600; text-transform: uppercase; display: block; margin-bottom: 4px; }
         input, select, textarea { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #dce1e6; border-radius: 10px; box-sizing: border-box; font-size: 15px; outline: none; background: #f9fafb; -webkit-appearance: none; }
        
-        /* Стили для комментария и опций */
         .comment-box { display: none; margin-bottom: 15px; padding: 10px; background: #fff9f9; border-radius: 10px; border: 1px dashed var(--accent); }
         .silent-box {
             display: flex;
@@ -39,8 +39,11 @@
             height: 22px;
             margin: 0;
             cursor: pointer;
+            flex-shrink: 0;
             -webkit-appearance: checkbox;
         }
+        .silent-box.disabled { opacity: 0.5; color: #999; cursor: not-allowed; }
+
         button#submit_btn { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px; box-shadow: 0 4px 12px rgba(230, 86, 76, 0.2); }
         button:disabled { background: #b0b0b0; box-shadow: none; }
         .vol-card { background: white; padding: 10px 15px; border-radius: 12px; border: 1px solid #ebedef; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
@@ -70,38 +73,9 @@
         .qr-code-img { width: 220px; height: 220px; margin: 10px auto; display: block; background: #fff; }
         .fab-help { position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 1500; cursor: pointer; border: 2px solid white; }
         #search_results, #rate_results { background: white; border: 1px solid #dce1e6; border-radius: 12px; max-height: 200px; overflow-y: auto; display: none; position: absolute; width: 100%; z-index: 1000; box-shadow: 0 10px 25px rgba(0,0,0,0.1); top: 52px; }
-        
-        /* Новый стиль для выбранного друга */
-        .selected-friend {
-            background: #f0f2ff;
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border: 1px solid #dce1e6;
-        }
-        .selected-friend img {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-        }
-        .change-friend-btn {
-            background: #ebedef;
-            color: #2B326D;
-            border: none;
-            padding: 8px 14px;
-            border-radius: 8px;
-            font-size: 13px;
-            cursor: pointer;
-        }
-
-        .org-card { background: white; padding: 16px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin: 15px; border: 1px solid #eef0f2; }
-        .thematic { border-left: 5px solid #ff9800; background: #fff8e1 !important; }
-        .org-btn { width: 100%; padding: 14px; margin: 8px 0; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 15px; }
-        .org-register { background: #2B326D; color: white; }
-        .org-delete { background: #feebeb; color: #E6564C; border: 1px solid #ffdada; }
+        .selected-friend { background: #f0f2ff; padding: 12px; border-radius: 10px; margin-bottom: 15px; display: flex; align-items: center; gap: 12px; border: 1px solid #dce1e6; }
+        .selected-friend img { width: 40px; height: 40px; border-radius: 50%; }
+        .change-friend-btn { background: #ebedef; color: #2B326D; border: none; padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; }
 
         /* Мультивыбор стили */
         .roles-container { border: 1px solid #dce1e6; border-radius: 12px; padding: 5px; max-height: 280px; overflow-y: auto; background: #f9fafb; margin-bottom: 15px; }
@@ -111,7 +85,35 @@
         .role-option span { font-size: 14px; color: #333; flex: 1; }
         .role-option.selected { background: #f0f2ff; }
         .group-label { background: #eee; font-size: 10px; font-weight: 800; padding: 4px 10px; color: #666; text-transform: uppercase; }
-        .silent-box.disabled { opacity: 0.5; color: #999; cursor: not-allowed; }
+
+        /* Новые стили для фрейма регистрации */
+        .reg-frame-container { border-radius: 12px; overflow: hidden; border: 1px solid #dce1e6; margin-top: 15px; height: 600px; position: relative; }
+        .reg-frame-container iframe { width: 100%; height: 100%; border: none; }
+
+        .timer-banner {
+        background: var(--primary); /* Тот самый синий 5 вёрст */
+        color: white;
+        padding: 10px;
+        border-radius: 12px;
+        text-align: center;
+        margin: 15px; /* Сделал отступы как у карточек */
+        font-weight: bold;
+        font-size: 13px;
+        box-shadow: 0 4px 15px rgba(43, 50, 109, 0.2);
+        border: 1px solid rgba(255,255,255,0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        }
+        #timer_clock { 
+        font-family: 'Courier New', monospace; /* Моноширинный шрифт, чтобы цифры не "прыгали" */
+        font-size: 16px; 
+        color: #fff;
+        background: rgba(255,255,255,0.1);
+        padding: 2px 8px;
+        border-radius: 6px;
+        }
     </style>
 </head>
 <body>
@@ -123,11 +125,10 @@
         <button class="btn-qr" onclick="openModal('modal_guide')">📱 Гайд по приложению</button>
         <button class="btn-qr" onclick="openModal('modal_about')">🌳 О нас</button>
         <button class="btn-qr" onclick="window.open('https://vk.com/5verstkstovoyubileyniy')">🌐 Наши соцсети</button>
-        <div style="text-align:center; margin-top:20px; font-size:11px; color:#999;">Версия 1.5</div>
+        <div style="text-align:center; margin-top:20px; font-size:11px; color:#999;">Версия 1.6</div>
     </div>
     <div class="close-modal">Закрыть</div>
 </div>
-
 <div id="modal_roles" class="modal" onclick="closeModal('modal_roles')">
     <div class="modal-content" onclick="event.stopPropagation()" style="max-width:350px;">
         <h2 style="border:none;">Ключевые роли</h2>
@@ -154,7 +155,6 @@
     </div>
     <div class="close-modal">Назад</div>
 </div>
-
 <div id="modal_role_detail" class="modal" onclick="closeModal('modal_role_detail')">
     <div class="modal-content" onclick="event.stopPropagation()">
         <img id="role_img" class="role-detail-img" src="">
@@ -163,20 +163,18 @@
     </div>
     <div class="close-modal">Назад</div>
 </div>
-
 <div id="modal_guide" class="modal" onclick="closeModal('modal_guide')">
     <div class="modal-content" onclick="event.stopPropagation()">
         <h2 style="border:none;">Как пользоваться?</h2>
         <div style="font-size:14px; line-height:1.5; color:#555;">
             1. 🔍 <b>Поиск</b>: Введи фамилию или ID 5 вёрст в окне записи.<br><br>
-            2. ✅ <b>Выбор</b>: Выбери свою роль из списка.<br><br>
+            2. ✅ <b>Выбор</b>: Выбери одну или несколько ролей из списка.<br><br>
             3. 🧡 <b>Рейтинг</b>: Записывайся чаще, чтобы получать бейджи клубов!<br><br>
             4. 📲 <b>Карточка</b>: Найди себя в рейтинге, чтобы сохранить личную QR-карту участника.
         </div>
     </div>
     <div class="close-modal">Назад</div>
 </div>
-
 <div id="modal_about" class="modal" onclick="closeModal('modal_about')">
     <div class="modal-content" onclick="event.stopPropagation()">
         <h2 style="border:none;">5 вёрст в парке Юбилейный</h2>
@@ -187,7 +185,6 @@
     </div>
     <div class="close-modal">Назад</div>
 </div>
-
 <div id="qr_modal" class="modal" onclick="closeQR()">
     <div class="modal-content" onclick="event.stopPropagation()">
         <h3 style="color:var(--primary); margin:0 0 15px 0;">Личная карточка</h3>
@@ -202,16 +199,22 @@
 
 <div class="tabs">
     <div id="tab_rec" class="tab active" onclick="switchTab('rec')">ЗАПИСЬ</div>
-    <div id="tab_rate" class="tab" onclick="switchTab('rate')">РЕЙТИНГ</div>
-    <div id="tab_org" class="tab" onclick="switchTab('org')" style="display:none;">ОРГ-ПАНЕЛЬ</div>
+    <div id="tab_rate" class="tab" onclick="switchTab('rate')">КЛУБНЫЙ РЕЙТИНГ</div>
+    <div id="tab_reg" class="tab" onclick="switchTab('reg')">ПОРТАЛ</div>
+    <div id="tab_feed" class="tab" onclick="switchTab('feed')">ОБРАТНАЯ СВЯЗЬ</div>
 </div>
 
 <div id="section_rec">
     <!-- ТЕМАТИКА СТАРТА -->
     <div class="card" style="border: 2px dashed var(--accent); background: #fffcfc;">
-        <label>Тематика старта (видят все):</label>
-        <textarea id="theme_input" rows="3" placeholder="Например: 21 марта - День защиты леса..."></textarea>
+        <label>Тема старта:</label>
+        <textarea id="theme_input" rows="3" placeholder="Например: 21 марта - Всемирный день поэзии..."></textarea>
         <button class="btn-qr" style="margin-top:0; height:36px; font-size:12px; background:var(--primary);" onclick="saveTheme()">Сохранить тему</button>
+        <button id="sync_btn" class="btn-sync" onclick="manualSync()">🔄 Синхронизировать с сайтом</button>
+    </div>
+
+    <div class="timer-banner" id="countdown_timer" style="display:none;">
+    ⏳ До старта осталось: <span id="timer_clock">00:00:00:00</span>
     </div>
 
     <div class="card">
@@ -221,12 +224,11 @@
         </div>
         
         <div id="welcome_back" class="welcome-msg"></div>
-        <label>1. Кто пойдет волонтерить (5 вёрст):</label>
+        <label>1. Кто пойдет волонтёрить (5 вёрст):</label>
         <div style="position:relative">
             <input type="text" id="verst_search" placeholder="Фамилия или ID 5 вёрст..." autocomplete="off">
             <div id="search_results"></div>
         </div>
-
         <label>2. Чей профиль VK привязать:</label>
         <select id="vk_id_mode" onchange="toggleFriendVk()">
             <option value="me">Мой профиль</option>
@@ -243,18 +245,20 @@
                 <button class="change-friend-btn" onclick="selectAnotherFriend()">Выбрать другого</button>
             </div>
             <button id="choose_friend_btn" class="btn-qr" onclick="selectFriendFromVK()" style="margin-top:8px;">Выбрать друга из ВК</button>
-            <input type="hidden" id="selected_vk_id"><input type="hidden" id="selected_vk_name">
+            <input type="hidden" id="selected_vk_id">
+            <input type="hidden" id="selected_vk_name">
         </div>
-
+        
         <label>3. Позиции волонтера (выберите одну или несколько):</label>
         <div class="roles-container" id="roles_checkbox_list">
             <div class="group-label">Основные позиции</div>
             <div class="role-option" data-id="1" data-name="Организатор"><input type="checkbox"> <span>Организатор</span></div>
             <div class="role-option" data-id="2" data-name="Секундомер"><input type="checkbox"> <span>Секундомер</span></div>
-            <div class="role-option" data-id="5" data-name="Фотограф"><input type="checkbox"> <span>Фотограф</span></div>
-            <div class="role-option" data-id="7" data-name="Маршал"><input type="checkbox"> <span>Маршал</span></div>
             <div class="role-option" data-id="11" data-name="Сканирование штрих-кодов"><input type="checkbox"> <span>Сканирование штрих-кодов</span></div>
+            <div class="role-option" data-id="7" data-name="Маршал"><input type="checkbox"> <span>Маршал</span></div>
+            <div class="role-option" data-id="35" data-name="Разметка трассы"><input type="checkbox"> <span>Разметка трассы</span></div>
             <div class="role-option" data-id="13" data-name="Раздача карточек позиций"><input type="checkbox"> <span>Раздача карточек позиций</span></div>
+            <div class="role-option" data-id="15" data-name="Инструктаж новых участников"><input type="checkbox"> <span>Инструктаж новых участников</span></div>
             <div class="role-option" data-id="19" data-name="Замыкающий"><input type="checkbox"> <span>Замыкающий</span></div>
             
             <div class="group-label">Уникальные позиции</div>
@@ -262,9 +266,9 @@
             <div class="role-option" data-id="1002" data-name="Вкусняшки"><input type="checkbox"> <span>Вкусняшки</span></div>
             <div class="role-option" data-id="1003" data-name="Вода"><input type="checkbox"> <span>Вода</span></div>
             <div class="role-option" data-id="1004" data-name="Поддержка на трассе"><input type="checkbox"> <span>Поддержка на трассе</span></div>
-            <div class="role-option" data-id="8" data-name="Подготовка мероприятия"><input type="checkbox"> <span>Подготовка мероприятия</span></div>
             
             <div class="group-label">Дополнительные позиции</div>
+            <div class="role-option" data-id="8" data-name="Подготовка мероприятия"><input type="checkbox"> <span>Подготовка мероприятия</span></div>
             <div class="role-option" data-id="3" data-name="Сортировка карточек"><input type="checkbox"> <span>Сортировка карточек</span></div>
             <div class="role-option" data-id="4" data-name="Обработка результатов"><input type="checkbox"> <span>Обработка результатов</span></div>
             <div class="role-option" data-id="6" data-name="Связи с общественностью"><input type="checkbox"> <span>Связи с общественностью</span></div>
@@ -272,7 +276,6 @@
             <div class="role-option" data-id="10" data-name="Разное"><input type="checkbox"> <span>Разное</span></div>
             <div class="role-option" data-id="12" data-name="Завершение мероприятия"><input type="checkbox"> <span>Завершение мероприятия</span></div>
             <div class="role-option" data-id="14" data-name="Проверка карточек позиций"><input type="checkbox"> <span>Проверка карточек позиций</span></div>
-            <div class="role-option" data-id="15" data-name="Инструктаж новых участников"><input type="checkbox"> <span>Инструктаж новых участников</span></div>
             <div class="role-option" data-id="16" data-name="Организация финиша"><input type="checkbox"> <span>Организация финиша</span></div>
             <div class="role-option" data-id="17" data-name="Ведущий велосипед"><input type="checkbox"> <span>Ведущий велосипед</span></div>
             <div class="role-option" data-id="18" data-name="Помощь в раздаче карточек позиций"><input type="checkbox"> <span>Помощь в раздаче карточек позиций</span></div>
@@ -284,9 +287,9 @@
             <div class="role-option" data-id="32" data-name="Сурдопереводчик"><input type="checkbox"> <span>Сурдопереводчик</span></div>
             <div class="role-option" data-id="33" data-name="Координатор парковки"><input type="checkbox"> <span>Координатор парковки</span></div>
             <div class="role-option" data-id="34" data-name="Проверка трассы"><input type="checkbox"> <span>Проверка трассы</span></div>
-            <div class="role-option" data-id="35" data-name="Разметка трассы"><input type="checkbox"> <span>Разметка трассы</span></div>
             <div class="role-option" data-id="36" data-name="Ведущий мероприятия"><input type="checkbox"> <span>Ведущий мероприятия</span></div>
             <div class="role-option" data-id="37" data-name="Проведение предстартового брифинга"><input type="checkbox"> <span>Проведение предстартового брифинга</span></div>
+            <div class="role-option" data-id="5" data-name="Фотограф"><input type="checkbox"> <span>Фотограф</span></div>
             <div class="role-option" data-id="38" data-name="Видеограф"><input type="checkbox"> <span>Видеограф</span></div>
         </div>
 
@@ -329,6 +332,7 @@
     <div style="margin-left:20px; font-weight:bold; color:var(--primary); font-size:13px; text-transform:uppercase;">Уже в списке:</div>
     <div id="queue_container" style="padding:10px 15px;"></div>
 </div>
+
 <div id="section_rate" style="display:none">
     <div class="card">
         <h2>Поиск участника</h2>
@@ -344,98 +348,108 @@
     </div>
 </div>
 
-<div id="section_org" style="display:none">
-    <div class="card thematic">
-        <h2>🔒 Заметки для оргов</h2>
-        <p style="font-size:12px; color:#666;">Это приватный блокнот. Записи <b>не</b> улетают в чат.</p>
-        <textarea id="admin_note_input" rows="3" placeholder="Запись..."></textarea>
-        <button class="org-btn org-register" onclick="saveAdminNote()">Сохранить заметку</button>
-        <div id="admin_notes_history" style="margin-top:15px; border-top:1px solid #ddd; max-height:200px; overflow-y:auto;"></div>
-    </div>
+<!-- НОВАЯ СЕКЦИЯ: РЕГИСТРАЦИЯ -->
+<div id="section_reg" style="display:none">
     <div class="card">
-        <h2>Орг-панель (график)</h2>
-        <div id="org_dates_list">Загрузка дат...</div>
+        <h2>Портал 5 вёрст</h2>
+        <p style="font-size: 13px; color: #666; margin-bottom:15px;">Регистрация, вход, карта локаций и многое другое теперь всегда под рукой!</p>
+        <div class="reg-frame-container">
+            <iframe src="https://5verst.ru/register/"></iframe>
+        </div>
+    </div>
+</div>
+
+<!-- НОВАЯ СЕКЦИЯ: ОБРАТНАЯ СВЯЗЬ -->
+<div id="section_feed" style="display:none">
+    <div class="card">
+        <h2>Обратная связь</h2>
+        <p style="font-size: 13px; color: #666; margin-bottom:15px;">Есть идеи по улучшению приложения?</p>
+        <label>Ваше сообщение:</label>
+        <textarea id="feedback_input" rows="6" placeholder="Напишите здесь всё, что считаете нужным..."></textarea>
+        <button id="feedback_btn" class="btn-qr" onclick="sendFeedback()">Отправить</button>
+        <div id="feedback_status" style="margin-top:10px; font-size:12px; text-align:center; display:none;"></div>
     </div>
 </div>
 
 <script>
     vkBridge.send("VKWebAppInit");
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx20heVxtSF2eo8gd3lY5xmRDsEJ9f9oNPYfyjSkO0vNJ6LXWDZlBm9uvyf5jPfj6vvNA/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzAcxK292cItTfyf8NDxfDmvYH9-yaLByMNbOB5Wvs_kZLgfxqaFYApXrCYwB45X51VqQ/exec';
     const GITHUB_IMG_BASE = 'https://raw.githubusercontent.com/Weifox1307/5verst_stankozavod_bot_vk/main/';
-    let selectedVolunteer = null, vkUser = null, currentSelectedFriend = null;
+    let selectedVolunteer = null;
+    let vkUser = null;
+    let currentSelectedFriend = null;
 
     const runIcon = `<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M13.49 5.42c1.23 0 2.22-1 2.22-2.22A2.22 2.22 0 0 0 13.5 1a2.22 2.22 0 0 0-2.23 2.22c0 1.22.99 2.2 2.22 2.2M10.34 11l-2.1-1.03c-.34-.17-.55-.52-.55-.91 0-.74.79-1.22 1.45-.91l4.83 2.3c.53.25.87.78.87 1.37V17h-2v-4.43l-1.74-.83V23h-2v-6.95l.45-1.5L7.2 13c-.34-.16-.55-.52-.55-.9 0-.75.8-1.23 1.46-.9l2.23 1.03V11z'/%3E%3C/svg%3E" />`;
     const volIcon = "🧡 ";
 
     function switchTab(t) {
-        document.getElementById('section_rec').style.display = t === 'rec' ? 'block' : 'none';
-        document.getElementById('section_rate').style.display = t === 'rate' ? 'block' : 'none';
-        document.getElementById('section_org').style.display = t === 'org' ? 'block' : 'none';
-        document.getElementById('tab_rec').classList.toggle('active', t === 'rec');
-        document.getElementById('tab_rate').classList.toggle('active', t === 'rate');
-        document.getElementById('tab_org').classList.toggle('active', t === 'org');
+        const sections = ['rec', 'rate', 'reg', 'feed'];
+        sections.forEach(s => {
+            document.getElementById('section_' + s).style.display = t === s ? 'block' : 'none';
+            document.getElementById('tab_' + s).classList.toggle('active', t === s);
+        });
         if (t === 'rate') loadRating();
-        if (t === 'org') { loadOrgPanel(); loadAdminNotes(); }
     }
+
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    function showRoleDetail(id, title, desc) {
+        const img = document.getElementById('role_img');
+        img.src = `${GITHUB_IMG_BASE}role_${id}.jpg`;
+        document.getElementById('role_title').innerText = title;
+        document.getElementById('role_desc').innerText = desc;
+        openModal('modal_role_detail');
+    }
+
+    function showQR(id, name) {
+        const qrBox = document.getElementById('qr_img_box');
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=A${id}`;
+        qrBox.innerHTML = '<div style="padding:40px; color:#999;">Генерация QR...</div>';
+        document.getElementById('qr_id_text').innerText = `A${id}`;
+        document.getElementById('qr_name_text').innerText = name.toUpperCase();
+        openModal('qr_modal');
+        const img = new Image();
+        img.onload = () => { qrBox.innerHTML = ''; img.className = 'qr-code-img'; img.style.width = '200px'; img.style.height = '200px'; qrBox.appendChild(img); };
+        img.src = qrUrl;
+    }
+
+    function closeQR() { closeModal('qr_modal'); }
 
     async function init() {
         try {
             vkUser = await vkBridge.send("VKWebAppGetUserInfo");
-            const tRes = await fetch(`${SCRIPT_URL}?get_theme=1`);
-            const tData = await tRes.json();
-            document.getElementById('theme_input').value = tData.theme || "";
+
+            // Загрузка темы
+            const themeRes = await fetch(`${SCRIPT_URL}?get_theme=1`);
+            const themeData = await themeRes.json();
+            document.getElementById('theme_input').value = themeData.theme || "";
 
             const res = await fetch(`${SCRIPT_URL}?check_vk_id=${vkUser.id}`);
             const data = await res.json();
             if (data.found) {
                 selectedVolunteer = { id: data.verst_id, full_name: data.full_name };
                 document.getElementById('verst_search').value = data.full_name;
-                document.getElementById('welcome_back').style.display = 'block';
-                document.getElementById('welcome_back').innerHTML = `👋 <b>${vkUser.first_name}</b>, твои данные подставлены!<br><button class="btn-qr" onclick="showQR('${data.verst_id}', '${data.full_name}')">МОЯ КАРТОЧКА</button>`;
+                const welcome = document.getElementById('welcome_back');
+                welcome.style.display = 'block';
+                let badgesHtml = "";
+                if (data.stats) {
+                    const rB = data.stats.run_club ? `<span class="badge ${data.stats.run_club}">${runIcon} ${data.stats.run_club.replace('run','')}</span>` : '';
+                    const vB = data.stats.vol_club ? `<span class="badge ${data.stats.vol_club}">${volIcon} ${data.stats.vol_club.replace('vol','')}</span>` : '';
+                    if (rB || vB) badgesHtml = `<div class="stats-row">${rB} ${vB}</div>`;
+                }
+                welcome.innerHTML = `👋 <b>${vkUser.first_name}</b>, твои данные подставлены!<br>${badgesHtml}<button class="btn-qr" onclick="showQR('${data.verst_id}', '${data.full_name}')">МОЯ КАРТОЧКА УЧАСТНИКА</button>`;
             }
             const dRes = await fetch(SCRIPT_URL + "?get_date=1");
             const dData = await dRes.json();
             document.getElementById('event_date').innerText = dData.date;
-            await loadQueue(); validateForm();
-            setTimeout(checkOrganizer, 1000);
-        } catch (e) {}
+            await loadQueue();
+            validateForm();
+        } catch (e) { console.error(e); }
     }
     init();
 
-    async function loadRating() {
-        const container = document.getElementById('rating_list');
-        container.innerHTML = '<div style="padding:20px; text-align:center; color:#999;">Загрузка...</div>';
-        try {
-            const res = await fetch(`${SCRIPT_URL}?get_rating=1`);
-            const data = await res.json();
-            data.sort((a,b) => ((b.runs||0) + (b.vols||0)) - ((a.runs||0) + (a.vols||0)));
-            container.innerHTML = '';
-            data.forEach((u, i) => {
-                const item = document.createElement('div');
-                item.className = 'rating-item';
-                const rBadge = u.run_club ? `<span class="badge ${u.run_club}">${runIcon} ${u.run_club.replace('run','')}</span>` : '';
-                const vBadge = u.vol_club ? `<span class="badge ${u.vol_club}">${volIcon} ${u.vol_club.replace('vol','')}</span>` : '';
-                const badges = (rBadge || vBadge) ? `<div class="stats-row">${rBadge} ${vBadge}</div>` : '<div style="font-size:10px; color:#999;">Участник парка Юбилейный | Кстово</div>';
-                item.innerHTML = `<div class="rank">${i+1}</div><div class="user-info"><div class="user-name">${u.name}</div>${badges}</div><button class="btn-qr" style="width:auto; margin:0;" onclick="showQR('${u.verst_id}', '${u.name}')">QR</button>`;
-                container.appendChild(item);
-            });
-        } catch (e) { container.innerHTML = 'Ошибка загрузки'; }
-    }
-
-    async function saveTheme() {
-        const text = document.getElementById('theme_input').value;
-        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "set_theme", theme: text }) });
-        alert("Тема сохранена!");
-    }
-
-    async function checkOrganizer() {
-        if (!vkUser) return;
-        const res = await fetch(`${SCRIPT_URL}?is_organizer=1&vk_id=${vkUser.id}`);
-        const data = await res.json();
-        if (data.is_organizer) document.getElementById('tab_org').style.display = 'block';
-    }
-
-    // 1. Обработка клика по строке роли (мультивыбор)
+    // Мультивыбор: клик по строке
     document.querySelectorAll('.role-option').forEach(item => {
         item.onclick = function(e) {
             const cb = this.querySelector('input');
@@ -445,7 +459,6 @@
         };
     });
 
-    // 2. Обновленная логика скрытия/показа полей и блокировки тихого режима
     function handleRoleChange() {
         const checked = Array.from(document.querySelectorAll('.role-option input:checked')).map(i => i.parentElement.dataset.id);
         const marshalCont = document.getElementById('marshal_container');
@@ -453,9 +466,9 @@
         const commentBox = document.getElementById('comment_container');
         const silentBox = document.getElementById('silent_mode');
         const silentLabel = document.getElementById('silent_label');
-        
-        // Список ключевых ролей (если выбраны они, тихий режим запрещен)
-        const keyRoles = ["1", "2", "5", "7", "11", "13", "19", "15"];
+
+        // Список ключевых ролей для запрета Тихого режима
+        const keyRoles = ["1", "7", "11", "2", "15", "9", "13", "19"];
         const hasKeyRole = checked.some(id => keyRoles.includes(id));
 
         if (hasKeyRole) {
@@ -466,13 +479,12 @@
             silentBox.disabled = false;
             silentLabel.classList.remove('disabled');
         }
-    
+
         marshalCont.style.display = checked.includes("7") ? 'block' : 'none';
         paceCont.style.display = checked.includes("28") ? 'block' : 'none';
         
-        // Показывать поле комментария для определенных ролей
-        const needsComment = checked.some(id => ["8", "9", "35", "1001", "1002", "1003", "1004", "1005"].includes(id));
-        if (needsComment || (checked.includes("7") && document.getElementById('marshal_select').value === 'custom')) {
+        const needsComment = checked.some(id => ["8", "9", "35", "1001", "1002", "1003"].includes(id));
+        if (needsComment || (checked.includes("7") && document.getElementById('marshal_select').value === 'custom') || (checked.includes("28") && document.getElementById('pace_select').value === 'custom')) {
             commentBox.style.display = 'block';
         } else {
             commentBox.style.display = 'none';
@@ -480,26 +492,139 @@
         validateForm();
     }
 
-    function handleMarshalSelect() { document.getElementById('comment_container').style.display = (document.getElementById('marshal_select').value === 'custom') ? 'block' : 'none'; }
-    function handlePaceSelect() { document.getElementById('comment_container').style.display = (document.getElementById('pace_select').value === 'custom') ? 'block' : 'none'; }
-
-    async function saveAdminNote() {
-        const text = document.getElementById('admin_note_input').value;
-        if (!text) return;
-        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "add_admin_note", vk_id: vkUser.id, name: vkUser.first_name, text: text }) });
-        document.getElementById('admin_note_input').value = ""; alert("Заметка сохранена!"); loadAdminNotes();
+    async function saveTheme() {
+        const text = document.getElementById('theme_input').value;
+        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "set_theme", theme: text }) });
+        alert("Тема сохранена!");
     }
 
-    async function loadAdminNotes() {
-        const res = await fetch(`${SCRIPT_URL}?get_admin_notes=1`);
-        const data = await res.json();
-        document.getElementById('admin_notes_history').innerHTML = (data.notes || []).map(n => `<div style="padding:8px; border-bottom:1px solid #eee; font-size:13px;"><b>${n.name}:</b> ${n.text}</div>`).join('');
+    async function manualSync() {
+        const btn = document.getElementById('sync_btn');
+        btn.disabled = true;
+        btn.innerText = "⌛ Синхронизируем...";
+        try {
+            const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "manual_sync" }) });
+            const data = await res.json();
+            if (data.success) {
+                alert("Синхронизация завершена!");
+                location.reload();
+            }
+        } catch(e) { alert("Ошибка синхронизации"); }
+        btn.disabled = false;
+        btn.innerText = "🔄 Синхронизировать с сайтом";
+    }
+
+    async function sendFeedback() {
+        const text = document.getElementById('feedback_input').value.trim();
+        if (!text) return alert("Пожалуйста, введите текст сообщения.");
+        const btn = document.getElementById('feedback_btn');
+        btn.disabled = true;
+        btn.innerText = "Отправка...";
+        
+        try {
+            // Используем action: "add_admin_note" для обратной связи
+            await fetch(SCRIPT_URL, { 
+                method: 'POST', 
+                body: JSON.stringify({ 
+                    action: "add_admin_note", 
+                    vk_id: vkUser.id, 
+                    name: vkUser.first_name + " " + vkUser.last_name, 
+                    text: "[ОТЗЫВ] " + text 
+                }) 
+            });
+            alert("Спасибо за отзыв! Ваше сообщение отправлено.");
+            document.getElementById('feedback_input').value = "";
+        } catch(e) { alert("Ошибка при отправке."); }
+        
+        btn.disabled = false;
+        btn.innerText = "Отправить";
+    }
+
+    function toggleFriendVk() {
+        const mode = document.getElementById('vk_id_mode').value;
+        const container = document.getElementById('friend_vk_container');
+        if (mode === 'friend') {
+            container.style.display = 'block';
+        } else {
+            container.style.display = 'none';
+            document.getElementById('selected_vk_id').value = "";
+        }
+        validateForm();
+    }
+
+    async function selectFriendFromVK() {
+        try {
+            const data = await vkBridge.send("VKWebAppGetFriends", { multi: false });
+            if (data.users && data.users.length > 0) {
+                const friend = data.users[0];
+                document.getElementById('selected_vk_id').value = friend.id;
+                document.getElementById('selected_vk_name').value = friend.first_name + " " + friend.last_name;
+                document.getElementById('selected_friend_photo').src = friend.photo_100;
+                document.getElementById('selected_friend_name').innerText = friend.first_name + " " + friend.last_name;
+                document.getElementById('selected_friend_id').innerText = "ID: " + friend.id;
+                document.getElementById('selected_friend_display').style.display = 'flex';
+                document.getElementById('choose_friend_btn').style.display = 'none';
+                validateForm();
+            }
+        } catch (e) {}
+    }
+
+    function selectAnotherFriend() {
+        document.getElementById('selected_friend_display').style.display = 'none';
+        document.getElementById('choose_friend_btn').style.display = 'block';
+        document.getElementById('selected_vk_id').value = "";
+        validateForm();
+    }
+
+    function handleMarshalSelect() { handleRoleChange(); }
+    function handlePaceSelect() { handleRoleChange(); }
+
+    async function searchHandler(query, resultBox, isRecord) {
+        if (query.length < 3) { resultBox.style.display = 'none'; return; }
+        resultBox.innerHTML = '<div style="padding:15px">Ищем...</div>';
+        resultBox.style.display = 'block';
+        try {
+            const res = await fetch(`${SCRIPT_URL}?search=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            resultBox.innerHTML = '';
+            (data.result?.data || []).forEach(v => {
+                const div = document.createElement('div');
+                div.style = "padding:12px; border-bottom:1px solid #f0f0f0; cursor:pointer;";
+                div.innerHTML = `<b>${v.full_name}</b><br><small>ID: ${v.id}</small>`;
+                div.onclick = async () => {
+                    if (isRecord) {
+                        selectedVolunteer = v;
+                        document.getElementById('verst_search').value = v.full_name;
+                        resultBox.style.display = 'none';
+                        validateForm();
+                    }
+                };
+                resultBox.appendChild(div);
+            });
+        } catch (e) { resultBox.innerHTML = 'Ошибка'; }
+    }
+
+    document.getElementById('verst_search').addEventListener('input', (e) => {
+        clearTimeout(window.searchTimeout);
+        window.searchTimeout = setTimeout(() => searchHandler(e.target.value.trim(), document.getElementById('search_results'), true), 500);
+    });
+
+    document.getElementById('rate_search').addEventListener('input', (e) => {
+        clearTimeout(window.rateTimeout);
+        window.rateTimeout = setTimeout(() => searchHandler(e.target.value.trim(), document.getElementById('rate_results'), false), 500);
+    });
+
+    function validateForm() {
+        const anyChecked = document.querySelectorAll('.role-option input:checked').length > 0;
+        const mode = document.getElementById('vk_id_mode').value;
+        const vkOk = (mode === 'me' || (mode === 'friend' && document.getElementById('selected_vk_id').value));
+        document.getElementById('submit_btn').disabled = !(selectedVolunteer && anyChecked && vkOk);
     }
 
     async function sendData() {
         const btn = document.getElementById('submit_btn');
         btn.innerText = "Записываем..."; btn.disabled = true;
-        
+
         const roles = Array.from(document.querySelectorAll('.role-option input:checked')).map(cb => {
             const item = cb.parentElement;
             const rid = item.dataset.id;
@@ -507,72 +632,131 @@
             if (rid == "7") {
                 const m = document.getElementById('marshal_select').value;
                 comment = (m === 'custom' ? comment : m);
+            } else if (rid == "28") {
+                const p = document.getElementById('pace_select').value;
+                comment = (p === 'custom' ? comment : p);
             }
             return { id: rid, name: item.dataset.name, comment: comment };
         });
-        
+
         const payload = {
             verst_id: selectedVolunteer.id,
             full_name: selectedVolunteer.full_name,
-            roles: roles, // Массив ролей
+            roles: roles,
             author_vk_id: vkUser.id,
             target_vk_id: document.getElementById('vk_id_mode').value === 'me' ? vkUser.id : document.getElementById('selected_vk_id').value,
             target_vk_name: document.getElementById('vk_id_mode').value === 'me' ? (vkUser.first_name + " " + vkUser.last_name) : document.getElementById('selected_vk_name').value,
             silent: document.getElementById('silent_mode').checked
         };
-        
+
         await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
         location.reload();
     }
 
-    async function searchHandler(query, resultBox, isRecord) {
-        if (query.length < 3) { resultBox.style.display = 'none'; return; }
-        resultBox.innerHTML = '<div style="padding:15px">Ищем...</div>'; resultBox.style.display = 'block';
-        const res = await fetch(`${SCRIPT_URL}?search=${encodeURIComponent(query)}`);
-        const data = await res.json(); resultBox.innerHTML = '';
-        (data.result?.data || []).forEach(v => {
-            const div = document.createElement('div'); div.style = "padding:12px; border-bottom:1px solid #f0f0f0; cursor:pointer;";
-            div.innerHTML = `<b>${v.full_name}</b><br><small>ID: ${v.id}</small>`;
-            div.onclick = () => { if (isRecord) { selectedVolunteer = v; document.getElementById('verst_search').value = v.full_name; resultBox.style.display = 'none'; validateForm(); } };
-            resultBox.appendChild(div);
-        });
-    }
-
-    document.getElementById('verst_search').addEventListener('input', (e) => { clearTimeout(window.searchTimeout); window.searchTimeout = setTimeout(() => searchHandler(e.target.value.trim(), document.getElementById('search_results'), true), 500); });
-    function validateForm() {
-        const anyChecked = document.querySelectorAll('.role-option input:checked').length > 0;
-        const mode = document.getElementById('vk_id_mode').value;
-        const vkOk = (mode === 'me' || (mode === 'friend' && document.getElementById('selected_vk_id').value));
-        document.getElementById('submit_btn').disabled = !(selectedVolunteer && anyChecked && vkOk);
-        if (document.getElementById('submit_btn').disabled) {
-            document.getElementById('submit_btn').innerText = "Выполните шаги выше";
-        } else {
-            document.getElementById('submit_btn').innerText = "Записаться";
-        }
+    async function loadRating() {
+        const container = document.getElementById('rating_list');
+        container.innerHTML = '<div style="padding:20px; text-align:center; color:#999;">Загрузка рейтинга...</div>';
+        try {
+            const res = await fetch(`${SCRIPT_URL}?get_rating=1`);
+            const data = await res.json();
+            data.sort((a,b) => ((b.runs||0) + (b.vols||0)) - ((a.runs||0) + (a.vols||0)));
+            container.innerHTML = '';
+            data.forEach((u, i) => {
+                const item = document.createElement('div');
+                item.className = 'rating-item';
+                const rBadge = u.run_club ? `<span class="badge ${u.run_club}">${runIcon} ${u.run_club.replace('run','')}</span>` : '';
+                const vBadge = u.vol_club ? `<span class="badge ${u.vol_club}">${volIcon} ${u.vol_club.replace('vol','')}</span>` : '';
+                item.innerHTML = `<div class="rank">${i+1}</div><div class="user-info"><div class="user-name">${u.name}</div><div class="stats-row">${rBadge} ${vBadge}</div></div>`;
+                container.appendChild(item);
+            });
+        } catch (e) { container.innerHTML = 'Ошибка'; }
     }
 
     async function loadQueue() {
-        const res = await fetch(SCRIPT_URL); const data = await res.json();
-        const container = document.getElementById('queue_container'); container.innerHTML = '';
+        const res = await fetch(SCRIPT_URL);
+        const data = await res.json();
+        const container = document.getElementById('queue_container');
+        container.innerHTML = '';
+        if(data.length === 0) {
+            container.innerHTML = '<div style="text-align:center; color:#999; padding:20px;">Пока никто не записался</div>';
+            return;
+        }
         data.reverse().forEach(item => {
-            const div = document.createElement('div'); div.className = 'vol-card';
+            const div = document.createElement('div');
+            div.className = 'vol-card';
             const isMine = vkUser && (item.author_vk_id == vkUser.id || item.vk_id == vkUser.id);
-            div.innerHTML = `<div class="vol-info-group"><span class="vol-name-txt">${item.full_name} ${item.comment?'('+item.comment+')':''}</span><span class="vol-role-badge">${item.role_name}</span></div>${isMine?`<button class="btn-delete" onclick="deleteMyRole('${item.role_id}','${item.role_name}','${item.full_name}')">Отмена</button>`:''}`;
+            div.innerHTML = `
+                <div class="vol-info-group">
+                    <span class="vol-name-txt">${item.full_name} ${item.comment ? '('+item.comment+')' : ''}</span>
+                    <span class="vol-role-badge">${item.role_name}</span>
+                </div>
+                ${isMine ? `<button class="btn-delete" onclick="deleteMyRole('${item.role_id}', '${item.role_name}', '${item.full_name}', '${item.verst_id}')">Отмена</button>` : ''}
+            `;
             container.appendChild(div);
         });
     }
-    async function deleteMyRole(rid, rname, fname) { if (confirm(`Отменить запись ${fname}?`)) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "delete", vk_id: vkUser.id, role_id: rid, role_name: rname, person_name: fname }) }); location.reload(); } }
-    function toggleFriendVk() { document.getElementById('friend_vk_container').style.display = (document.getElementById('vk_id_mode').value === 'friend') ? 'block' : 'none'; }
-    async function selectFriendFromVK() { const data = await vkBridge.send("VKWebAppGetFriends", { multi: false }); if (data.users && data.users.length > 0) { const f = data.users[0]; document.getElementById('selected_vk_id').value = f.id; document.getElementById('selected_vk_name').value = f.first_name + " " + f.last_name; document.getElementById('selected_friend_photo').src = f.photo_100; document.getElementById('selected_friend_name').innerText = f.first_name + " " + f.last_name; document.getElementById('selected_friend_display').style.display = 'flex'; document.getElementById('choose_friend_btn').style.display = 'none'; validateForm(); } }
-    function selectAnotherFriend() { document.getElementById('selected_friend_display').style.display = 'none'; document.getElementById('choose_friend_btn').style.display = 'block'; }
-    async function loadOrgPanel() { const res = await fetch(`${SCRIPT_URL}?get_organizers_dates=1`); const data = await res.json(); document.getElementById('org_dates_list').innerHTML = data.dates.map(date => `<div class="org-card"><h2>${date}</h2><button class="org-btn org-register" onclick="registerAsOrg('${date}')">Записаться орг.</button><button class="org-btn org-delete" onclick="deleteAsOrg('${date}')">Удалить орг.</button></div>`).join(''); }
-    async function registerAsOrg(date) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "register_organizer", date: date, vk_id: vkUser.id, full_name: vkUser.first_name + " " + vkUser.last_name }) }); loadOrgPanel(); }
-    async function deleteAsOrg(date) { await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "delete_organizer", date: date, vk_id: vkUser.id }) }); loadOrgPanel(); }
-    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-    function showRoleDetail(id, t, d) { document.getElementById('role_img').src = `https://raw.githubusercontent.com/Weifox1307/5-verst-kstovo-bot-VK/main/role_${id}.jpg`; document.getElementById('role_title').innerText = t; document.getElementById('role_desc').innerText = d; openModal('modal_role_detail'); }
-    function showQR(id, n) { document.getElementById('qr_img_box').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=A${id}" class="qr-code-img">`; document.getElementById('qr_id_text').innerText = `A${id}`; document.getElementById('qr_name_text').innerText = n.toUpperCase(); openModal('qr_modal'); }
-    function closeQR() { closeModal('qr_modal'); }
+
+    async function deleteMyRole(rid, rname, fname, verst_id) {
+        if (confirm(`Отменить запись ${fname}?`)) {
+            // Передаем и vk_id и verst_id для надежного удаления
+            await fetch(SCRIPT_URL, { 
+                method: 'POST', 
+                body: JSON.stringify({ 
+                    action: "delete", 
+                    vk_id: vkUser.id, 
+                    verst_id: verst_id,
+                    role_id: rid, 
+                    role_name: rname, 
+                    person_name: fname 
+                }) 
+            });
+            location.reload();
+        }
+    }
+
+    function updateTimer() {
+    const timerBox = document.getElementById('countdown_timer');
+    const clock = document.getElementById('timer_clock');
+    
+    function tick() {
+        const now = new Date();
+        // Ищем ближайшую субботу 09:00 МСК
+        let target = new Date();
+        target.setDate(now.getDate() + (6 - now.getDay() + 7) % 7);
+        target.setHours(9, 0, 0, 0);
+
+        // Если сегодня суббота и уже больше 10:00 утра, переключаем на следующую неделю
+        if (now > target && now.getHours() >= 10) {
+            target.setDate(target.getDate() + 7);
+        }
+
+        const diff = target - now;
+
+        if (diff <= 0) {
+            if (now.getHours() < 10) {
+                timerBox.style.display = 'block';
+                timerBox.innerHTML = "🏃‍♂️ Старт уже начался! Удачного забега!";
+            } else {
+                timerBox.style.display = 'none';
+            }
+            return;
+        }
+
+        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const m = Math.floor((diff / (1000 * 60)) % 60);
+        const s = Math.floor((diff / 1000) % 60);
+
+        timerBox.style.display = 'block';
+        clock.innerText = `${d}д ${h}ч ${m}м ${s}с`;
+        }
+    
+        tick();
+        setInterval(tick, 1000);
+        }
+        
+        // Запускаем таймер сразу
+        updateTimer();
 </script>
 </body>
 </html>
