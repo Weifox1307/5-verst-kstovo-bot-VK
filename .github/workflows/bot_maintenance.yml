@@ -13,6 +13,7 @@ jobs:
           
           curl -X POST "https://api.vk.com/method/messages.send" \
             -d "peer_id=${{ secrets.VK_CHAT_IDS }}" \
+            -d "peer_id=${{ secrets.PEER_ID }}" \
             -d "message=$MSG" \
             -d "random_id=0" \
             -d "access_token=${{ secrets.VK_TOKEN }}" \
