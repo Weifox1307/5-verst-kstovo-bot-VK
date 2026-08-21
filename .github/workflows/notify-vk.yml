@@ -26,7 +26,7 @@ jobs:
           KEYBOARD='{"inline":true,"buttons":[[{"action":{"type":"open_link","link":"'"$ARTICLE_URL"'","label":"📖 Читать об обновлении"}}]]}'
 
           curl -s -X POST "https://api.vk.com/method/messages.send" \
-            -d "peer_id=${PEER_ID}" \
+            -d "peer_id=${VK_CHAT_IDS}" \
             -d "message=${MESSAGE}" \
             -d "keyboard=${KEYBOARD}" \
             -d "random_id=0" \
