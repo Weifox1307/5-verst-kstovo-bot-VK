@@ -9,7 +9,7 @@ from playwright.sync_api import sync_playwright
 # ================= НАСТРОЙКИ БОТА =================
 VK_TOKEN = os.getenv('VK_TOKEN')
 PEER_ID = 2000000001 # ID беседы
-STATS_URL = 'https://stat5verst.ru/parkstankozavoda/starts_all'
+STATS_URL = 'https://stat5verst.ru/kstovoyubileyniy/starts_all'
 # ==================================================
 
 def fetch_and_parse_data():
@@ -74,7 +74,7 @@ def create_chart(x, y_fin, y_vol, filename='parkrun_stats.png'):
     ax.plot(x, y_fin, color='#2B326D', marker='o', linewidth=2, markersize=5, label='Финишеры')
     ax.plot(x, y_vol, color='#E6564C', marker='o', linewidth=2, markersize=5, label='Волонтёры')
 
-    ax.set_title('Динамика посещаемости: 5 вёрст Станкозавод', fontsize=16, fontweight='bold', pad=15)
+    ax.set_title('Динамика посещаемости: 5 вёрст в парке Юбилейный | Кстово', fontsize=16, fontweight='bold', pad=15)
     ax.set_xlabel('Номер старта', fontsize=12, labelpad=10)
     ax.set_ylabel('Количество человек', fontsize=12, labelpad=10)
     
@@ -103,7 +103,7 @@ def send_to_vk(filename):
     photo = upload.photo_messages(filename)[0]
     attachment = f"photo{photo['owner_id']}_{photo['id']}"
 
-    message_text = "📊 Еженедельная статистика парковых пробежек обновлена! Посмотрите динамику финишеров и волонтеров."
+    message_text = "📊 Еженедельная статистика парковых пробежек обновлена! Динамика финишеров и волонтеров."
 
     vk.messages.send(
         peer_id=PEER_ID,
