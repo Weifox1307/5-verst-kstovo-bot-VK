@@ -1,13 +1,14 @@
 import os
 import random
 import requests
+import re
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 
 # --- НАСТРОЙКИ ---
 VK_TOKEN = os.getenv('VK_TOKEN')
 # Чаты Кстово
-CHAT_IDS = ["2000000001", "2000000002", "2000000263", "-231155212"]
+CHAT_IDS = ["2000000001"]
 VK_API_VERSION = "5.131"
 
 def get_holidays():
@@ -26,7 +27,16 @@ def get_holidays():
         items = soup.select('.holidays-items li')
         
         for item in items:
-            title = item.text.strip()
+            # Пытаемся взять текст только из тега <a> (там обычно чистое название)
+            a_tag = item.find('a')
+            if a_tag:
+                title = a_tag.text.strip()
+            else:
+                title = item.text.strip()
+                
+            # Отрезаем любые цифры (просмотры/лайки) и пробелы с конца строки
+            title = re.sub(r'\s+\d+$', '', title)
+            
             # Убираем лишний мусор и слишком длинные описания
             if title and len(title) < 100:
                 holidays.append(title)
