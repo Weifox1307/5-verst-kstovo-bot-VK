@@ -66,7 +66,7 @@ def format_message(holidays):
     
     date_str = f"{now_msk.day} {months[now_msk.month - 1]}"
 
-    msg = f"🌅 Доброе утро, Кстово! 🧡\n\n📅 Сегодня, {date_str}, отмечаются:\n\n"
+    msg = f"🌅 Всем привет! 🧡\n\n📅 Сегодня, {date_str}, отмечаются:\n\n"
     
     for holiday in holidays:
         emoji = random.choice(emojis)
