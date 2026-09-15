@@ -2,8 +2,8 @@ name: Daily Holidays Kstovo Bot
 
 on:
   schedule:
-    # Время указывается в UTC. 05:00 UTC = 08:00 по Москве
-    - cron: '0 5 * * *'
+    # Время указывается в UTC. 02:00 UTC = 05:00 по Москве (прилетит рано утром)
+    - cron: '0 2 * * *'
   
   # Позволяет запускать скрипт вручную кнопкой "Run workflow" в интерфейсе GitHub
   workflow_dispatch:
