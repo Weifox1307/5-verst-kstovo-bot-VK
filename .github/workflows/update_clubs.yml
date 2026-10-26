@@ -1,0 +1,31 @@
+name: Auto Update 5verst Clubs
+
+on:
+  # 1. По расписанию: каждый понедельник в 03:00 ночи (UTC)
+  schedule:
+    - cron: '0 3 * * 1'
+  # 2. Возможность запустить руками в один клик через вкладку Actions
+  workflow_dispatch:
+
+jobs:
+  update-clubs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install requests beautifulsoup4 pandas openpyxl google-api-python-client google-auth
+
+      - name: Run sync script
+        env:
+          DRIVE_FILE_ID: ${{ secrets.DRIVE_FILE_ID }}
+          GDRIVE_SERVICE_ACCOUNT_KEY: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_KEY }}
+        run: |
+          python sync_clubs.py
